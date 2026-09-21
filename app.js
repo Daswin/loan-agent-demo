@@ -1,6 +1,6 @@
 const API_BASE = window.LOAN_API_BASE || window.location.origin;
 const SESSION_KEY = "loan-agent-session-id";
-const SESSION_ID = localStorage.getItem(SESSION_KEY) || crypto.randomUUID();
+let sessionId = localStorage.getItem(SESSION_KEY) || crypto.randomUUID();
 
 const CUSTOMER_PROFILES = {
   marcus: { firstName: "Marcus", lastName: "Bell", baseLoanAmount: 1200000 },
@@ -60,7 +60,7 @@ const PROBLEM_OPTIONS = [
 
 let applicationId = localStorage.getItem(APPLICATION_KEY);
 let applicationState = null;
-localStorage.setItem(SESSION_KEY, SESSION_ID);
+localStorage.setItem(SESSION_KEY, sessionId);
 
 const byId = (id) => document.getElementById(id);
 
@@ -102,6 +102,31 @@ function appendMessage(sender, text) {
   const chatWindow = byId("chat-window");
   chatWindow.appendChild(message);
   chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function startFreshConversation(automatic = false) {
+  byId("chat-window").replaceChildren();
+  showQuickReplies();
+  const receipt = byId("receipt");
+  receipt.replaceChildren();
+  receipt.hidden = true;
+  sessionId = crypto.randomUUID();
+  localStorage.setItem(SESSION_KEY, sessionId);
+
+  const firstName = applicationState.personal.first_name;
+  const completion = applicationState.completion || {};
+  const nextLabel = completion.next_missing_field_label;
+  if (automatic) {
+    appendMessage(
+      "agent",
+      "This demo application was reset after five minutes of inactivity. Your original customer information is ready, and we can begin again.",
+    );
+  }
+  const greeting = firstName
+    ? `Hello, ${firstName}. You've already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I'm here to help you finish the rest, one step at a time. Let's begin with this: what is your ${nextLabel || "next missing detail"}?`
+    : "Hello! I can help collect your loan application information and documents. I do not approve or decline applications. What is your first name?";
+  appendMessage("agent", greeting);
+  showQuickReplies(FIELD_QUICK_REPLIES[completion.next_missing_field] || []);
 }
 
 function showQuickReplies(options = []) {
@@ -330,7 +355,7 @@ async function sendMessage(messageOverride = null) {
     const result = await api("/api/chat", {
       method: "POST",
       body: JSON.stringify({
-        session_id: SESSION_ID,
+        session_id: sessionId,
         application_id: applicationId,
         message,
       }),
@@ -500,6 +525,54 @@ async function submitPackage() {
   }
 }
 
+async function resetApplication() {
+  const confirmed = window.confirm(
+    "Reset this demo application? Information entered during this session, uploaded documents, checks, and submission progress will be cleared.",
+  );
+  if (!confirmed) return;
+
+  const button = byId("reset-application-btn");
+  button.disabled = true;
+  setNotice("Resetting the application...");
+  try {
+    applicationState = await api(
+      `/api/applications/${applicationId}/reset`,
+      { method: "POST" },
+    );
+    renderApplication();
+    startFreshConversation();
+    setNotice("Application restored to its original demo state.", "success");
+  } catch (error) {
+    setNotice(error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+let heartbeatInProgress = false;
+async function recordActivity() {
+  if (!applicationId || document.visibilityState !== "visible" || heartbeatInProgress) {
+    return;
+  }
+  heartbeatInProgress = true;
+  try {
+    const result = await api(
+      `/api/applications/${applicationId}/activity`,
+      { method: "POST" },
+    );
+    if (result.reset_performed) {
+      applicationState = result.application;
+      renderApplication();
+      startFreshConversation(true);
+      setNotice("Application reset after five minutes of inactivity.", "success");
+    }
+  } catch (error) {
+    console.warn("Unable to record application activity.", error);
+  } finally {
+    heartbeatInProgress = false;
+  }
+}
+
 byId("send-btn").addEventListener("click", sendMessage);
 byId("msg-input").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -514,16 +587,11 @@ byId("credit-fail-btn").addEventListener("click", () => recordCreditResult("FAIL
 byId("validate-btn").addEventListener("click", validatePackage);
 byId("submit-btn").addEventListener("click", submitPackage);
 byId("problem-btn").addEventListener("click", () => showQuickReplies(PROBLEM_OPTIONS));
+byId("reset-application-btn")?.addEventListener("click", resetApplication);
+window.setInterval(recordActivity, 60_000);
 
 refreshApplication()
   .then(() => {
-    const firstName = applicationState.personal.first_name;
-    const completion = applicationState.completion || {};
-    const nextLabel = completion.next_missing_field_label;
-    const greeting = firstName
-      ? `Hello, ${firstName}. You’ve already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I’m right here to help you finish the rest, one easy step at a time. Let’s begin with this: what is your ${nextLabel || "next missing detail"}?`
-      : "Hello! I can help collect your loan application information and documents. I do not approve or decline applications. What is your first name?";
-    appendMessage("agent", greeting);
-    showQuickReplies(FIELD_QUICK_REPLIES[completion.next_missing_field] || []);
+    startFreshConversation(Boolean(applicationState.last_reset_at));
   })
   .catch((error) => setNotice(error.message, "error"));

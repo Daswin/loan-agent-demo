@@ -2,12 +2,13 @@ import datetime
 import os
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from google.cloud import storage
 import google.auth
 from google.auth.transport.requests import Request
+from google.oauth2 import id_token
 from google.adk.runners import InMemoryRunner
 from google.genai import types as genai_types
 from pydantic import BaseModel, Field
@@ -18,7 +19,11 @@ from .application import (
     complete_validation,
     create_application,
     get_application,
+    is_application_inactive,
     list_applications,
+    list_inactive_applications,
+    reset_application,
+    touch_application,
     update_application_field,
     update_application_section,
 )
@@ -26,6 +31,7 @@ from .bank_api import submit_application as submit_to_bank
 from .credit_bureau import record_credit_consent, run_simulated_credit_check
 from .documents import (
     build_storage_path,
+    get_customer_folder_name,
     mark_document_failed,
     mark_document_processed,
     mark_document_processing,
@@ -198,6 +204,68 @@ def _generate_upload_url(blob, content_type: str) -> str:
     return blob.generate_signed_url(**options)
 
 
+def _delete_application_uploads(application) -> None:
+    """Delete only the Cloud Storage objects recorded for an application."""
+    bucket_name = os.environ.get("UPLOAD_BUCKET")
+    if not bucket_name:
+        return
+    prefix = (
+        "loan-applications/"
+        f"{get_customer_folder_name(application.application_id)}/"
+        f"{application.application_id}/"
+    )
+    for blob in storage.Client().list_blobs(bucket_name, prefix=prefix):
+        blob.delete()
+
+
+def _reset_application_and_uploads(application_id: str):
+    application = get_application(application_id)
+    _delete_application_uploads(application)
+    return reset_application(application_id)
+
+
+def _reset_inactive_applications(exclude_application_id: str | None = None):
+    reset_ids = []
+    for application in list_inactive_applications():
+        if application.application_id == exclude_application_id:
+            continue
+        _reset_application_and_uploads(application.application_id)
+        reset_ids.append(application.application_id)
+    return reset_ids
+
+
+def _verify_reset_scheduler(authorization: str | None) -> None:
+    """Accept reset sweeps only from the configured Scheduler identity."""
+    expected_email = os.environ.get("RESET_SCHEDULER_SERVICE_ACCOUNT")
+    audience = os.environ.get("RESET_SWEEP_AUDIENCE")
+    if not expected_email or not audience:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The inactivity reset scheduler is not configured.",
+        )
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Scheduler authentication is required.",
+        )
+    try:
+        claims = id_token.verify_oauth2_token(
+            authorization.removeprefix("Bearer ").strip(),
+            Request(),
+            audience=audience,
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Scheduler authentication is invalid.",
+        ) from exc
+    if claims.get("email") != expected_email or not claims.get("email_verified"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Scheduler identity is not authorized.",
+        )
+
+
 async def _ensure_agent_session(session_id: str) -> None:
     session = await runner.session_service.get_session(
         app_name="loan_agent_demo",
@@ -309,7 +377,52 @@ async def list_applications_endpoint():
 
 @app.get("/api/applications/{application_id}")
 async def get_application_endpoint(application_id: str):
-    return _application_or_404(application_id)
+    application = _application_or_404(application_id)
+    if is_application_inactive(application):
+        return _reset_application_and_uploads(application_id)
+    return application
+
+
+@app.post("/api/applications/{application_id}/activity")
+async def application_activity_endpoint(application_id: str):
+    application = _application_or_404(application_id)
+    reset_performed = is_application_inactive(application)
+    if reset_performed:
+        application = _reset_application_and_uploads(application_id)
+    else:
+        application = touch_application(application_id)
+    reset_ids = _reset_inactive_applications(
+        exclude_application_id=application_id,
+    )
+    return {
+        "application": application,
+        "reset_performed": reset_performed,
+        "other_applications_reset": len(reset_ids),
+    }
+
+
+@app.post("/api/applications/{application_id}/reset")
+async def reset_application_endpoint(application_id: str):
+    _application_or_404(application_id)
+    try:
+        return _reset_application_and_uploads(application_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The application could not be fully reset.",
+        ) from exc
+
+
+@app.post("/api/maintenance/reset-inactive")
+async def reset_inactive_applications_endpoint(
+    authorization: str | None = Header(default=None),
+):
+    _verify_reset_scheduler(authorization)
+    reset_ids = _reset_inactive_applications()
+    return {
+        "reset_count": len(reset_ids),
+        "application_ids": reset_ids,
+    }
 
 
 @app.patch("/api/applications/{application_id}/sections/{section_name}")

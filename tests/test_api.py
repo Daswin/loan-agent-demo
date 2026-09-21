@@ -1,5 +1,6 @@
 import os
 import unittest
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -155,6 +156,56 @@ class ApiTests(unittest.TestCase):
             response.json()["storage_path"],
             f"loan-applications/Alicia_Brown/{application_id}/job_letter.pdf",
         )
+
+    def test_manual_reset_endpoint_restores_seeded_customer(self):
+        created = self.client.post(
+            "/api/applications",
+            json={"profile_id": "keith", "requested_amount": 3_500_000},
+        ).json()
+        application_id = created["application_id"]
+        missing_field = created["completion"]["next_missing_field"]
+        self.client.patch(
+            f"/api/applications/{application_id}/fields/{missing_field}",
+            json={"value": "Temporary answer"},
+        )
+
+        response = self.client.post(
+            f"/api/applications/{application_id}/reset"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        reset = response.json()
+        self.assertEqual(reset["application_id"], application_id)
+        self.assertEqual(reset["status"], "IN_PROGRESS")
+        self.assertEqual(reset["completion"]["fields_completed"], 13)
+        self.assertEqual(reset["completion"]["documents_completed"], 0)
+        self.assertEqual(reset["loan"]["requested_amount"], 3_500_000)
+
+    def test_activity_endpoint_resets_an_inactive_application(self):
+        created = self.client.post(
+            "/api/applications",
+            json={"profile_id": "tanya"},
+        ).json()
+        application_id = created["application_id"]
+        stored = application.get_application(application_id)
+        stored.last_activity_at = application.utc_now() - timedelta(minutes=5)
+        application._REPOSITORY.save(stored)
+
+        response = self.client.post(
+            f"/api/applications/{application_id}/activity"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["reset_performed"])
+        self.assertEqual(
+            result["application"]["completion"]["fields_completed"],
+            13,
+        )
+
+    def test_reset_sweep_rejects_unauthenticated_callers(self):
+        response = self.client.post("/api/maintenance/reset-inactive")
+        self.assertIn(response.status_code, {401, 503})
 
 
 if __name__ == "__main__":

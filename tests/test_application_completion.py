@@ -1,9 +1,13 @@
 import unittest
+from datetime import timedelta
 from unittest.mock import patch
 
 from backend.application import (
     begin_document_collection,
     create_application,
+    is_application_inactive,
+    reset_application,
+    utc_now,
     update_application_field,
 )
 from backend.application_data import PROFILE_NAMES
@@ -104,6 +108,41 @@ class ApplicationCompletionTests(unittest.TestCase):
                 DocumentType.SALARY_ASSIGNMENT_FORM,
             },
         )
+
+    def test_reset_restores_original_profile_and_document_state(self):
+        application = create_application("marcus", 2_000_000)
+        original_fields = list(application.provided_fields)
+        missing_field = application.completion["next_missing_field"]
+        update_application_field(
+            application.application_id,
+            missing_field,
+            "Temporary answer",
+        )
+        begin_document_collection(application.application_id)
+        register_document_received(
+            application.application_id,
+            DocumentType.JOB_LETTER,
+            "job_letter.pdf",
+            "application/pdf",
+        )
+
+        reset = reset_application(application.application_id)
+
+        self.assertEqual(reset.status.value, "IN_PROGRESS")
+        self.assertEqual(reset.provided_fields, original_fields)
+        self.assertEqual(reset.completion["fields_completed"], 13)
+        self.assertEqual(reset.completion["documents_completed"], 0)
+        self.assertEqual(reset.loan.requested_amount, 2_000_000)
+        self.assertTrue(all(item.status.value == "REQUIRED" for item in reset.documents))
+        self.assertIsNotNone(reset.last_reset_at)
+
+    def test_five_minute_inactivity_threshold(self):
+        application = create_application("dana")
+        now = utc_now()
+        application.last_activity_at = now - timedelta(minutes=4, seconds=59)
+        self.assertFalse(is_application_inactive(application, now=now))
+        application.last_activity_at = now - timedelta(minutes=5)
+        self.assertTrue(is_application_inactive(application, now=now))
 
 
 if __name__ == "__main__":

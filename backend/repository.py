@@ -46,7 +46,7 @@ class FirestoreApplicationRepository:
         snapshot = self.collection.document(application_id).get()
         if not snapshot.exists:
             return None
-        return LoanApplication.model_validate(snapshot.to_dict())
+        return self._from_snapshot(snapshot)
 
     def save(self, application: LoanApplication) -> None:
         self.collection.document(application.application_id).set(
@@ -55,9 +55,21 @@ class FirestoreApplicationRepository:
 
     def list(self) -> list[LoanApplication]:
         return [
-            LoanApplication.model_validate(snapshot.to_dict())
+            self._from_snapshot(snapshot)
             for snapshot in self.collection.stream()
         ]
+
+    @staticmethod
+    def _from_snapshot(snapshot) -> LoanApplication:
+        data = snapshot.to_dict()
+        # Applications created before inactivity resets were introduced do
+        # not have this field. Their last mutation is the best migration
+        # value and allows abandoned legacy records to be reset as expected.
+        if not data.get("last_activity_at"):
+            data["last_activity_at"] = (
+                data.get("updated_at") or data.get("created_at")
+            )
+        return LoanApplication.model_validate(data)
 
 
 def build_repository(

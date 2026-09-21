@@ -5,6 +5,7 @@ locals {
     "aiplatform.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
+    "cloudscheduler.googleapis.com",
     "documentai.googleapis.com",
     "firestore.googleapis.com",
     "iamcredentials.googleapis.com",
@@ -12,7 +13,8 @@ locals {
     "storage.googleapis.com",
   ])
 
-  deploy_services = var.backend_image != "" && var.frontend_image != ""
+  deploy_services  = var.backend_image != "" && var.frontend_image != ""
+  backend_audience = "https://loan-agent-backend-${data.google_project.current.number}.${var.region}.run.app"
 }
 
 resource "google_project_service" "required" {
@@ -72,6 +74,11 @@ resource "google_service_account" "backend" {
 resource "google_service_account" "frontend" {
   account_id   = "loan-agent-frontend"
   display_name = "Loan agent frontend runtime"
+}
+
+resource "google_service_account" "reset_scheduler" {
+  account_id   = "loan-agent-reset-scheduler"
+  display_name = "Loan agent inactivity reset scheduler"
 }
 
 locals {
@@ -164,6 +171,14 @@ resource "google_cloud_run_v2_service" "backend" {
         name  = "GOOGLE_GENAI_USE_VERTEXAI"
         value = "true"
       }
+      env {
+        name  = "RESET_SCHEDULER_SERVICE_ACCOUNT"
+        value = google_service_account.reset_scheduler.email
+      }
+      env {
+        name  = "RESET_SWEEP_AUDIENCE"
+        value = local.backend_audience
+      }
     }
   }
 
@@ -209,4 +224,37 @@ resource "google_cloud_run_v2_service_iam_member" "frontend_public" {
   name     = google_cloud_run_v2_service.frontend[0].name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "reset_scheduler_invoker" {
+  count    = local.deploy_services ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.backend[0].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.reset_scheduler.email}"
+}
+
+resource "google_cloud_scheduler_job" "reset_inactive_applications" {
+  count       = local.deploy_services ? 1 : 0
+  name        = "loan-agent-reset-inactive-applications"
+  description = "Reset demo applications after five minutes of inactivity."
+  region      = var.region
+  schedule    = "* * * * *"
+  time_zone   = "Etc/UTC"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_v2_service.backend[0].uri}/api/maintenance/reset-inactive"
+
+    oidc_token {
+      service_account_email = google_service_account.reset_scheduler.email
+      audience              = local.backend_audience
+    }
+  }
+
+  depends_on = [
+    google_cloud_run_v2_service_iam_member.reset_scheduler_invoker,
+    google_project_service.required,
+  ]
 }

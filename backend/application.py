@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -119,6 +119,8 @@ def create_application(
         documents=_required_documents(profile_id, application_data),
         created_at=now,
         updated_at=now,
+        last_activity_at=now,
+        initial_requested_amount=requested_amount,
     )
 
     if profile_id:
@@ -244,6 +246,87 @@ def set_application_status(
     return application
 
 
+def touch_application(application_id: str) -> LoanApplication:
+    """Record that a customer is actively working on an application."""
+    application = get_application(application_id)
+    application.last_activity_at = utc_now()
+    save_application(application)
+    return application
+
+
+def is_application_inactive(
+    application: LoanApplication,
+    inactivity_minutes: int = 5,
+    now: datetime | None = None,
+) -> bool:
+    """Return whether an application has had no activity for the threshold."""
+    reference = now or utc_now()
+    return reference - application.last_activity_at >= timedelta(
+        minutes=inactivity_minutes,
+    )
+
+
+def reset_application(application_id: str) -> LoanApplication:
+    """Restore an application to its original seeded demonstration state."""
+    current = get_application(application_id)
+    now = utc_now()
+    requested_amount = current.initial_requested_amount
+    if requested_amount is None:
+        requested_amount = (
+            current.application_data.get("loan_request", {}).get(
+                "requested_amount"
+            )
+        )
+    application_data: dict[str, Any] = {}
+    provided_fields: list[str] = []
+    if current.profile_id:
+        application_data, provided_fields = create_profile_data(
+            current.profile_id,
+            requested_amount,
+        )
+
+    reset = LoanApplication(
+        application_id=current.application_id,
+        status=ApplicationStatus.IN_PROGRESS,
+        profile_id=current.profile_id,
+        application_data=application_data,
+        provided_fields=provided_fields,
+        documents=_required_documents(current.profile_id, application_data),
+        created_at=current.created_at,
+        updated_at=now,
+        last_activity_at=now,
+        last_reset_at=now,
+        initial_requested_amount=requested_amount,
+    )
+    if current.profile_id:
+        identity = application_data["applicant"]["identity"]
+        reset.personal.first_name = identity["first_name"]
+        reset.personal.last_name = identity["last_name"]
+        reset.loan.requested_amount = application_data[
+            "loan_request"
+        ]["requested_amount"]
+    refresh_completion(reset)
+    save_application(reset)
+    return reset
+
+
+def list_inactive_applications(
+    inactivity_minutes: int = 5,
+    now: datetime | None = None,
+) -> list[LoanApplication]:
+    """Return applications that should be recycled for the demo."""
+    reference = now or utc_now()
+    return [
+        application
+        for application in list_applications()
+        if is_application_inactive(
+            application,
+            inactivity_minutes=inactivity_minutes,
+            now=reference,
+        )
+    ]
+
+
 def update_application_field(
     application_id: str,
     field_path: str,
@@ -313,6 +396,7 @@ def get_document_record(
 
 def save_application(application: LoanApplication) -> LoanApplication:
     """Persist the authoritative application after a service mutation."""
+    application.last_activity_at = utc_now()
     _REPOSITORY.save(application)
     return application
 

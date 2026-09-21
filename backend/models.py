@@ -194,6 +194,11 @@ class LoanApplication(BaseModel):
     updated_at: datetime = Field(
         default_factory=utc_now
     )
+    last_activity_at: datetime = Field(
+        default_factory=utc_now
+    )
+    last_reset_at: Optional[datetime] = None
+    initial_requested_amount: Optional[float] = None
 
     bank_submission_reference: Optional[str] = None
     submitted_at: Optional[datetime] = None

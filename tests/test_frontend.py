@@ -16,6 +16,9 @@ class FrontendContractTests(unittest.TestCase):
         cls.dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(
             encoding="utf-8"
         )
+        cls.nginx_config = (PROJECT_ROOT / "default.conf").read_text(
+            encoding="utf-8"
+        )
 
     def test_all_required_documents_are_present(self):
         for label in (
@@ -86,6 +89,21 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('return ["Yes", "No"]', self.javascript)
         self.assertIn('return ["Agree", "Disagree"]', self.javascript)
         self.assertIn('return ["Confirm", "Decline"]', self.javascript)
+
+    def test_manual_and_inactivity_reset_controls_are_present(self):
+        self.assertIn('id="reset-application-btn"', self.html)
+        self.assertIn("/reset", self.javascript)
+        self.assertIn("/activity", self.javascript)
+        self.assertIn("60_000", self.javascript)
+        self.assertIn("five minutes of inactivity", self.javascript)
+
+    def test_application_shell_avoids_mixed_cached_frontend_versions(self):
+        self.assertIn(
+            'byId("reset-application-btn")?.addEventListener',
+            self.javascript,
+        )
+        self.assertIn("location /application/", self.nginx_config)
+        self.assertIn("no-store, no-cache, must-revalidate", self.nginx_config)
 
 
 if __name__ == "__main__":

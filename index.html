@@ -19,6 +19,9 @@
     .card h2, .card h3 { margin-top: 0; }
     .card h2 { color: #0c1f3d; font-family: 'Cinzel', serif; letter-spacing: -.015em; }
     .application-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .application-actions { display: flex; align-items: center; gap: 9px; }
+    .reset-button { padding: 7px 10px; border-color: #9f4450; background: transparent; color: #7e2432; font-size: .78rem; }
+    .reset-button:hover:not(:disabled) { background: #8b2f3d; color: white; }
     .completion { margin: 0 0 18px; padding: 14px; border: 1px solid #d4af37; border-radius: 10px; background: linear-gradient(135deg, #faf7ec, #edf3f8); }
     .completion-head, .completion-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     .completion-head strong { color: #123b68; }
@@ -83,7 +86,10 @@
           <div class="muted" id="customer-name">New applicant</div>
           <strong id="application-id">Starting…</strong>
         </div>
-        <span class="badge" id="application-status">INITIALIZING</span>
+        <div class="application-actions">
+          <span class="badge" id="application-status">INITIALIZING</span>
+          <button id="reset-application-btn" class="reset-button" type="button">Reset application</button>
+        </div>
       </div>
 
       <div class="completion" aria-label="Application completion">
