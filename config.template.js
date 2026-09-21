@@ -1,0 +1,1 @@
+window.LOAN_API_BASE = "${LOAN_API_BASE}";

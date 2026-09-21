@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+google-adk
+google-cloud-aiplatform
+google-cloud-storage
+google-cloud-documentai
+google-cloud-firestore
+requests

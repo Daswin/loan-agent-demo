@@ -1,0 +1,10 @@
+.git/
+backend/
+tests/
+terraform/
+static/
+*.md
+cloudbuild.yaml
+landing/node_modules
+landing/dist
+landing/.bolt

@@ -1,0 +1,447 @@
+{
+  "applicant": {
+    "identity": {
+      "title": "",
+      "first_name": "",
+      "middle_names": "",
+      "last_name": "",
+      "previous_or_maiden_name": "",
+      "suffix": "",
+      "gender": "",
+      "date_of_birth": "",
+      "place_of_birth": "",
+      "country_of_birth": "",
+      "nationality": "",
+      "citizenship": "",
+      "country_of_residence": "",
+      "marital_status": "",
+      "number_of_dependents": 0,
+      "education_level": "",
+      "trn_tax_id": "",
+      "nis_number": "",
+      "primary_id": {
+        "type": "",
+        "number": "",
+        "issue_date": "",
+        "expiry_date": "",
+        "issuing_country": ""
+      },
+      "secondary_id": {
+        "type": "",
+        "number": "",
+        "issue_date": "",
+        "expiry_date": "",
+        "issuing_country": ""
+      }
+    },
+
+    "contact": {
+      "personal_email": "",
+      "mobile_phone": "",
+      "alternate_phone": "",
+      "home_phone": "",
+      "preferred_contact_method": "",
+      "preferred_notification_method": "",
+      "best_time_to_contact": ""
+    },
+
+    "current_address": {
+      "address_line_1": "",
+      "address_line_2": "",
+      "community_district": "",
+      "city_town": "",
+      "parish_state": "",
+      "postal_code": "",
+      "country": "",
+      "years_at_address": 0,
+      "months_at_address": 0,
+      "residential_status": "",
+      "monthly_rent_or_mortgage": 0
+    },
+
+    "previous_address": {
+      "applicable": false,
+      "address_line_1": "",
+      "address_line_2": "",
+      "community_district": "",
+      "city_town": "",
+      "parish_state": "",
+      "postal_code": "",
+      "country": "",
+      "date_moved_in": "",
+      "date_moved_out": ""
+    },
+
+    "employment": {
+      "employment_status": "",
+      "employment_type": "",
+      "occupation": "",
+      "job_title": "",
+      "employer_name": "",
+      "employer_address": {
+        "address_line_1": "",
+        "address_line_2": "",
+        "city_town": "",
+        "parish_state": "",
+        "postal_code": "",
+        "country": ""
+      },
+      "employer_phone": "",
+      "hr_payroll_phone": "",
+      "employee_number": "",
+      "employment_start_date": "",
+      "years_employed": 0,
+      "months_employed": 0,
+      "contract_expiration_date": "",
+      "industry_business_type": "",
+      "previous_employment": {
+        "applicable": false,
+        "employer_name": "",
+        "employer_address": "",
+        "job_title": "",
+        "start_date": "",
+        "end_date": ""
+      }
+    },
+
+    "self_employment": {
+      "applicable": false,
+      "business_legal_name": "",
+      "trading_name": "",
+      "business_registration_number": "",
+      "business_type": "",
+      "nature_of_business": "",
+      "business_address": {
+        "address_line_1": "",
+        "address_line_2": "",
+        "city_town": "",
+        "parish_state": "",
+        "postal_code": "",
+        "country": ""
+      },
+      "business_phone": "",
+      "ownership_percentage": 0,
+      "date_business_established": "",
+      "years_in_business": 0,
+      "monthly_business_income": 0,
+      "annual_business_income": 0,
+      "accountant": {
+        "name": "",
+        "phone": "",
+        "email": ""
+      }
+    },
+
+    "income": {
+      "gross_monthly_salary": 0,
+      "net_monthly_salary": 0,
+      "basic_salary": 0,
+      "overtime_income": 0,
+      "commission_income": 0,
+      "bonus_income": 0,
+      "allowances": 0,
+      "other_employment_income": 0,
+      "rental_income": 0,
+      "pension_income": 0,
+      "investment_income": 0,
+      "other_income": 0,
+      "other_income_description": "",
+      "pay_frequency": "",
+      "next_pay_date": "",
+      "salary_payment_method": "",
+      "salary_deposit_bank": "",
+      "total_monthly_income": 0
+    },
+
+    "monthly_expenses": {
+      "rent_or_mortgage": 0,
+      "food_groceries": 0,
+      "utilities": 0,
+      "transportation": 0,
+      "insurance": 0,
+      "education": 0,
+      "childcare": 0,
+      "maintenance_alimony": 0,
+      "medical": 0,
+      "credit_card_payments": 0,
+      "loan_payments": 0,
+      "hire_purchase": 0,
+      "other_recurring_expenses": 0,
+      "other_expenses_description": "",
+      "total_monthly_expenses": 0
+    },
+
+    "liabilities": [],
+
+    "assets": [],
+
+    "banking": {
+      "primary_bank": "",
+      "branch": "",
+      "account_type": "",
+      "account_number": "",
+      "account_holder_name": "",
+      "years_with_bank": 0,
+      "salary_deposited_here": false,
+      "average_balance": 0,
+      "preferred_disbursement_account": "",
+      "preferred_repayment_account": "",
+      "automatic_payment_authorized": false
+    }
+  },
+
+  "loan_request": {
+    "product_type": "",
+    "requested_amount": 0,
+    "loan_purpose": "",
+    "purpose_description": "",
+    "requested_term_months": 0,
+    "preferred_repayment_frequency": "",
+    "preferred_payment_date": "",
+    "desired_monthly_payment": 0,
+    "secured": false,
+    "collateral_security_offered": "",
+    "source_of_down_payment": "",
+    "existing_debt_to_be_consolidated": false,
+    "branch_preference": "",
+    "loan_officer_representative": ""
+  },
+
+  "next_of_kin": {
+    "title": "",
+    "first_name": "",
+    "middle_name": "",
+    "last_name": "",
+    "relationship": "",
+    "date_of_birth": "",
+    "address": {
+      "address_line_1": "",
+      "address_line_2": "",
+      "city_town": "",
+      "parish_state": "",
+      "postal_code": "",
+      "country": ""
+    },
+    "home_phone": "",
+    "mobile_phone": "",
+    "email": "",
+    "occupation": "",
+    "employer": ""
+  },
+
+  "references": [
+    {
+      "reference_number": 1,
+      "full_name": "",
+      "relationship": "",
+      "years_known": 0,
+      "address": {
+        "address_line_1": "",
+        "address_line_2": "",
+        "city_town": "",
+        "parish_state": "",
+        "postal_code": "",
+        "country": ""
+      },
+      "home_phone": "",
+      "mobile_phone": "",
+      "email": "",
+      "occupation": "",
+      "employer": ""
+    },
+    {
+      "reference_number": 2,
+      "full_name": "",
+      "relationship": "",
+      "years_known": 0,
+      "address": {
+        "address_line_1": "",
+        "address_line_2": "",
+        "city_town": "",
+        "parish_state": "",
+        "postal_code": "",
+        "country": ""
+      },
+      "home_phone": "",
+      "mobile_phone": "",
+      "email": "",
+      "occupation": "",
+      "employer": ""
+    }
+  ],
+
+  "emergency_contact": {
+    "full_name": "",
+    "relationship": "",
+    "address": {
+      "address_line_1": "",
+      "address_line_2": "",
+      "city_town": "",
+      "parish_state": "",
+      "postal_code": "",
+      "country": ""
+    },
+    "mobile_phone": "",
+    "alternate_phone": "",
+    "email": ""
+  },
+
+  "spouse": {
+    "applicable": false,
+    "full_name": "",
+    "date_of_birth": "",
+    "trn_tax_id": "",
+    "employer": "",
+    "occupation": "",
+    "employer_phone": "",
+    "gross_monthly_income": 0,
+    "net_monthly_income": 0,
+    "mobile_phone": "",
+    "email": "",
+    "is_co_applicant": false
+  },
+
+  "co_applicant": {
+    "applicable": false,
+    "identity": {
+      "title": "",
+      "first_name": "",
+      "middle_names": "",
+      "last_name": "",
+      "date_of_birth": "",
+      "nationality": "",
+      "marital_status": "",
+      "trn_tax_id": "",
+      "primary_id_type": "",
+      "primary_id_number": ""
+    },
+    "contact": {
+      "email": "",
+      "mobile_phone": "",
+      "home_phone": ""
+    },
+    "address": {
+      "address_line_1": "",
+      "address_line_2": "",
+      "city_town": "",
+      "parish_state": "",
+      "postal_code": "",
+      "country": ""
+    },
+    "employment": {
+      "employment_status": "",
+      "employment_type": "",
+      "occupation": "",
+      "job_title": "",
+      "employer_name": "",
+      "employer_phone": "",
+      "employment_start_date": ""
+    },
+    "income": {
+      "gross_monthly_income": 0,
+      "net_monthly_income": 0,
+      "other_monthly_income": 0,
+      "total_monthly_income": 0
+    },
+    "total_monthly_expenses": 0,
+    "assets": [],
+    "liabilities": []
+  },
+
+  "documents": {
+    "identity_documents": {
+      "government_photo_id": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "secondary_id": {
+        "required": false,
+        "received": false,
+        "storage_path": ""
+      },
+      "trn_document": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "proof_of_address": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      }
+    },
+
+    "employment_income_documents": {
+      "job_letter": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "payslip_01": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "payslip_02": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "payslip_03": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      },
+      "employment_contract": {
+        "required": false,
+        "received": false,
+        "storage_path": ""
+      },
+      "salary_assignment_form": {
+        "required": true,
+        "received": false,
+        "storage_path": ""
+      }
+    },
+
+    "financial_documents": {
+      "bank_statements": [],
+      "existing_loan_statements": [],
+      "credit_card_statements": [],
+      "mortgage_statements": [],
+      "proof_of_assets": []
+    },
+
+    "self_employed_documents": {
+      "required": false,
+      "business_registration": {
+        "received": false,
+        "storage_path": ""
+      },
+      "annual_return": {
+        "received": false,
+        "storage_path": ""
+      },
+      "tax_returns": [],
+      "financial_statements": [],
+      "business_bank_statements": []
+    },
+
+    "loan_specific_documents": {
+      "pro_forma_invoice_or_quotation": {
+        "required": false,
+        "received": false,
+        "storage_path": ""
+      },
+      "vehicle_documents": [],
+      "property_documents": [],
+      "proof_of_down_payment": {
+        "required": false,
+        "received": false,
+        "storage_path": ""
+      },
+      "collateral_documents": []
+    }
+  }
+}

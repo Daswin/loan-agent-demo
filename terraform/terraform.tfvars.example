@@ -1,0 +1,9 @@
+project_id                   = "your-gcp-project-id"
+region                       = "us-central1"
+document_ai_location         = "us"
+document_ai_processor_id     = "your-processor-id"
+frontend_origins             = ["http://localhost:8080"]
+
+# Populate these after Cloud Build creates the first images.
+backend_image  = ""
+frontend_image = ""

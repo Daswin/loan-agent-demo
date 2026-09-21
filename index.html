@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loan Application Assistant</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+    :root { color-scheme: light; font-family: 'DM Sans', system-ui, sans-serif; color: #172033; background: #081529; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 50% 0, #1a3a6b 0, #10294a 30%, #081529 75%); }
+    header { background: rgba(8, 21, 41, .84); color: white; padding: 22px max(24px, calc((100% - 1180px) / 2)); border-top: 5px solid #d4af37; border-bottom: 1px solid rgba(212,175,55,.28); }
+    header h1 { margin: 0 0 5px; color: #f0f4fa; font: 700 1.55rem 'Cinzel', serif; }
+    header p { margin: 0; color: #a8bccf; }
+    .header-inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .back-link { color: #f0d878; border: 1px solid rgba(212,175,55,.55); padding: 9px 13px; text-decoration: none; font-size: .82rem; font-weight: 700; }
+    main { max-width: 1180px; margin: 24px auto; padding: 0 20px 40px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, .85fr); gap: 20px; align-items: start; }
+    .card { background: rgba(248,250,252,.98); border: 1px solid rgba(212,175,55,.35); border-radius: 12px; padding: 20px; box-shadow: 0 18px 45px rgba(0,0,0,.28); }
+    .card h2, .card h3 { margin-top: 0; }
+    .card h2 { color: #0c1f3d; font-family: 'Cinzel', serif; letter-spacing: -.015em; }
+    .application-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .completion { margin: 0 0 18px; padding: 14px; border: 1px solid #d4af37; border-radius: 10px; background: linear-gradient(135deg, #faf7ec, #edf3f8); }
+    .completion-head, .completion-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .completion-head strong { color: #123b68; }
+    .completion-track { height: 9px; margin: 10px 0 8px; overflow: hidden; border-radius: 999px; background: #dce5ef; }
+    .completion-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #1a3a6b, #d4af37); transition: width .35s ease; }
+    .completion-meta { color: #637083; font-size: .78rem; }
+    .completion-guidance { margin: 9px 0 0; color: #405269; font-size: .82rem; }
+    .muted { color: #637083; font-size: .9rem; }
+    .badge { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #e9dfbd; color: #123b68; font-weight: 700; font-size: .78rem; }
+    #chat-window { height: 390px; overflow-y: auto; border: 1px solid #dce3ec; border-radius: 9px; padding: 14px; background: #f8fafc; }
+    .message { max-width: 84%; margin: 9px 0; padding: 9px 12px; border-radius: 10px; white-space: pre-wrap; }
+    .message.user { margin-left: auto; background: #1a3a6b; color: white; }
+    .message.agent { background: #eee7d2; border-left: 3px solid #d4af37; }
+    .row { display: flex; gap: 9px; margin-top: 12px; align-items: center; }
+    .conversation-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .problem-button { border-color: #8090a4; background: transparent; color: #405269; padding: 7px 10px; font-size: .8rem; }
+    .quick-replies { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .quick-reply { border-radius: 999px; padding: 8px 12px; background: #f8f2df; color: #173a64; }
+    input[type="text"] { flex: 1; min-width: 0; padding: 11px; border: 1px solid #bac5d3; border-radius: 7px; }
+    button { border: 1px solid #d4af37; border-radius: 7px; padding: 10px 14px; background: #1a3a6b; color: white; cursor: pointer; font-weight: 650; transition: transform .18s, background .18s; }
+    button:hover:not(:disabled) { background: #2c5f8a; transform: translateY(-1px); }
+    button.secondary { background: #243f61; }
+    button.success { background: #167347; }
+    button.warning { background: #9a5c00; }
+    button:disabled { opacity: .48; cursor: not-allowed; }
+    .document { border-top: 1px solid #e3e8ef; padding: 14px 0; }
+    .document:first-child { border-top: 0; }
+    .document-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .document-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+    .document-feedback { display: block; margin-top: 8px; color: #52657b; font-size: .8rem; }
+    .document-feedback.error { color: #a12424; }
+    .document input { max-width: 230px; }
+    .panel { margin-top: 18px; padding-top: 17px; border-top: 1px solid #dce3ec; }
+    .documents-card { position: static; }
+    .workflow-card { grid-column: 1 / -1; }
+    .workflow-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .workflow-grid .panel { margin-top: 0; padding: 16px; border: 1px solid #dce3ec; border-radius: 9px; }
+    .operator { background: #f8f2df; border: 1px solid #d4af37; border-radius: 9px; padding: 13px; }
+    .operator h3 { margin-bottom: 5px; }
+    #notice { min-height: 22px; margin: 12px 0 0; font-size: .92rem; }
+    #notice.error { color: #a12424; }
+    #notice.success { color: #12663f; }
+    @media (max-width: 850px) {
+      main { grid-template-columns: 1fr; }
+      .workflow-card { grid-column: auto; }
+      .workflow-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div><h1>Loan Application Assistant</h1><p>Application intake and document submission—not loan approval or underwriting.</p></div>
+      <a class="back-link" href="/">← Back to customer selection</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="application-bar">
+        <div>
+          <div class="muted" id="customer-name">New applicant</div>
+          <strong id="application-id">Starting…</strong>
+        </div>
+        <span class="badge" id="application-status">INITIALIZING</span>
+      </div>
+
+      <div class="completion" aria-label="Application completion">
+        <div class="completion-head"><span>Application completion</span><strong id="completion-value">0%</strong></div>
+        <div id="completion-track" class="completion-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="completion-bar" class="completion-fill"></div></div>
+        <div class="completion-meta"><span id="information-progress">Information 0%</span><span id="documents-progress">Documents 0%</span></div>
+        <p id="completion-guidance" class="completion-guidance"></p>
+      </div>
+
+      <h2>Application conversation</h2>
+      <div id="chat-window" aria-live="polite"></div>
+      <div class="row">
+        <input id="msg-input" type="text" placeholder="Type your response…" autocomplete="off">
+        <button id="send-btn" type="button">Send</button>
+      </div>
+      <div class="conversation-actions"><button id="problem-btn" class="problem-button" type="button">Having a problem?</button></div>
+      <div id="quick-replies" class="quick-replies" aria-label="Suggested responses"></div>
+
+    </section>
+
+    <section class="card documents-card">
+      <h2>Required documents</h2>
+      <p class="muted">Upload each file into its named document slot.</p>
+      <button id="start-documents-btn" class="secondary" type="button">Start document collection</button>
+      <div id="document-list"></div>
+    </section>
+
+    <section class="card workflow-card">
+      <h2>Workflow controls</h2>
+
+      <div class="workflow-grid">
+        <section class="panel">
+          <h3>Credit bureau consent</h3>
+          <p class="muted">Consent must be explicitly provided by the applicant.</p>
+          <label><input id="consent-checkbox" type="checkbox"> I consent to the simulated credit check.</label>
+          <div class="row"><button id="save-consent-btn" type="button">Save consent</button></div>
+        </section>
+
+        <section class="panel operator">
+          <h3>Demo operator controls</h3>
+          <p class="muted">PASS/FAIL records a simulated bureau result only. It does not approve or decline the loan.</p>
+          <div class="row">
+            <button id="credit-pass-btn" class="success" type="button">Record PASS</button>
+            <button id="credit-fail-btn" class="warning" type="button">Record FAIL</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Final package</h3>
+          <p class="muted">Validation checks workflow completeness; it performs no underwriting.</p>
+          <div class="row">
+            <button id="validate-btn" class="secondary" type="button">Validate package</button>
+            <button id="submit-btn" class="success" type="button">Submit package</button>
+          </div>
+          <div id="receipt" class="panel" hidden></div>
+        </section>
+      </div>
+
+      <p id="notice" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="/application/config.js"></script>
+  <script src="/application/app.js"></script>
+</body>
+</html>
