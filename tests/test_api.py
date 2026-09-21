@@ -207,6 +207,34 @@ class ApiTests(unittest.TestCase):
         response = self.client.post("/api/maintenance/reset-inactive")
         self.assertIn(response.status_code, {401, 503})
 
+    def test_demo_documents_endpoint_uploads_and_completes_three_pdfs(self):
+        created = self.client.post(
+            "/api/applications",
+            json={"profile_id": "dana"},
+        ).json()
+        application_id = created["application_id"]
+        bucket = MagicMock()
+        storage_client = MagicMock()
+        storage_client.bucket.return_value = bucket
+
+        with patch.dict(os.environ, {"UPLOAD_BUCKET": "loan-documents"}):
+            with patch(
+                "backend.main.storage.Client",
+                return_value=storage_client,
+            ):
+                response = self.client.post(
+                    f"/api/applications/{application_id}/demo-documents"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        completed = response.json()
+        self.assertEqual(completed["status"], "VALIDATION_REQUIRED")
+        self.assertEqual(completed["completion"]["documents_completed"], 3)
+        self.assertEqual(bucket.blob.call_count, 3)
+        for blob_call in bucket.blob.return_value.upload_from_string.call_args_list:
+            self.assertTrue(blob_call.args[0].startswith(b"%PDF-1.4"))
+            self.assertEqual(blob_call.kwargs["content_type"], "application/pdf")
+
 
 if __name__ == "__main__":
     unittest.main()

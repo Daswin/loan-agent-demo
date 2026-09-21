@@ -38,6 +38,7 @@ from .documents import (
     register_document_received,
 )
 from .document_processing import process_document_with_document_ai
+from .demo_documents import generate_and_upload_demo_documents
 from .models import CreditResult, DocumentType
 from .application_data import field_label
 from .form_generation import (
@@ -301,16 +302,58 @@ async def chat_endpoint(payload: ChatRequest):
                 f"Next, what is your {field_label(next_field)}?"
             )
         else:
-            reply_text = (
-                "Thank you. That completes the information portion of your "
-                "application. We can now focus on the remaining documents "
-                "and final checks."
-            )
+            if current_application.credit_bureau.consent:
+                reply_text = (
+                    "Thank you. Your application information is complete. "
+                    "Please move to Required documents and upload the job "
+                    "letter, payslip, and salary assignment form."
+                )
+                quick_replies = []
+            else:
+                reply_text = (
+                    "Thank you. Your application information is complete. "
+                    "Please move to Required documents and upload the job "
+                    "letter, payslip, and salary assignment form. Before we "
+                    "run the simulated credit-bureau check, do you consent "
+                    "to that check?"
+                )
+                quick_replies = ["Agree", "Disagree"]
         return {
             "reply": reply_text,
             "application_id": current_application.application_id,
             "status": current_application.status.value,
-            "quick_replies": _quick_replies_for_field(next_field),
+            "quick_replies": (
+                quick_replies
+                if not next_field
+                else _quick_replies_for_field(next_field)
+            ),
+        }
+
+    normalized_message = payload.message.strip().lower()
+    if not expected_field and normalized_message in {
+        "agree", "i agree", "yes", "consent", "i consent",
+        "disagree", "i disagree", "no", "decline",
+    }:
+        consent = normalized_message in {
+            "agree", "i agree", "yes", "consent", "i consent",
+        }
+        current_application = record_credit_consent(
+            application.application_id,
+            consent,
+        )
+        reply_text = (
+            "Thank you. Your credit-bureau consent has been recorded. "
+            "Please upload the three required documents next."
+            if consent
+            else "Understood. I recorded that you do not consent. You can "
+            "still upload the required documents, but the package cannot be "
+            "validated until consent is provided."
+        )
+        return {
+            "reply": reply_text,
+            "application_id": current_application.application_id,
+            "status": current_application.status.value,
+            "quick_replies": [],
         }
 
     await _ensure_agent_session(payload.session_id)
@@ -520,6 +563,24 @@ async def create_upload_url_endpoint(
         "storage_path": object_path,
         "document_type": typed_document.value,
     }
+
+
+@app.post("/api/applications/{application_id}/demo-documents")
+async def create_demo_documents_endpoint(application_id: str):
+    _application_or_404(application_id)
+    bucket_name = os.environ.get("UPLOAD_BUCKET")
+    if not bucket_name:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="UPLOAD_BUCKET is not configured.",
+        )
+    try:
+        return generate_and_upload_demo_documents(
+            application_id,
+            storage.Client().bucket(bucket_name),
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
 
 
 @app.post(

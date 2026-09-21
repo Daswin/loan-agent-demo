@@ -86,9 +86,16 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('id="quick-replies"', self.html)
         self.assertIn("PROBLEM_OPTIONS", self.javascript)
         self.assertIn("FIELD_QUICK_REPLIES", self.javascript)
-        self.assertIn('return ["Yes", "No"]', self.javascript)
-        self.assertIn('return ["Agree", "Disagree"]', self.javascript)
-        self.assertIn('return ["Confirm", "Decline"]', self.javascript)
+        self.assertNotIn("inferReplyOptions", self.javascript)
+        self.assertNotIn('return ["Yes", "No"]', self.javascript)
+        self.assertIn('["Agree", "Disagree"]', self.javascript)
+
+    def test_demo_document_button_preserves_manual_upload_workflow(self):
+        self.assertIn('id="auto-documents-btn"', self.html)
+        self.assertIn("/demo-documents", self.javascript)
+        self.assertIn('input.type = "file"', self.javascript)
+        self.assertIn("uploadDocument(", self.javascript)
+        self.assertIn("Submit package", self.html)
 
     def test_manual_and_inactivity_reset_controls_are_present(self):
         self.assertIn('id="reset-application-btn"', self.html)

@@ -122,11 +122,21 @@ function startFreshConversation(automatic = false) {
       "This demo application was reset after five minutes of inactivity. Your original customer information is ready, and we can begin again.",
     );
   }
-  const greeting = firstName
-    ? `Hello, ${firstName}. You've already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I'm here to help you finish the rest, one step at a time. Let's begin with this: what is your ${nextLabel || "next missing detail"}?`
-    : "Hello! I can help collect your loan application information and documents. I do not approve or decline applications. What is your first name?";
+  let greeting;
+  let greetingReplies = [];
+  if (!firstName) {
+    greeting = "Hello! I can help collect your loan application information and documents. I do not approve or decline applications. What is your first name?";
+  } else if (nextLabel) {
+    greeting = `Hello, ${firstName}. You've already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I'm here to help you finish the rest, one step at a time. Let's begin with this: what is your ${nextLabel}?`;
+    greetingReplies = FIELD_QUICK_REPLIES[completion.next_missing_field] || [];
+  } else if (!applicationState.credit_bureau.consent) {
+    greeting = `Hello, ${firstName}. Your application information is complete. Please upload the three required documents next. Before we run the simulated credit-bureau check, do you consent to that check?`;
+    greetingReplies = ["Agree", "Disagree"];
+  } else {
+    greeting = `Hello, ${firstName}. Your application information is complete and your credit-bureau consent is recorded. Please upload the three required documents next.`;
+  }
   appendMessage("agent", greeting);
-  showQuickReplies(FIELD_QUICK_REPLIES[completion.next_missing_field] || []);
+  showQuickReplies(greetingReplies);
 }
 
 function showQuickReplies(options = []) {
@@ -140,19 +150,6 @@ function showQuickReplies(options = []) {
     button.addEventListener("click", () => sendMessage(option));
     container.appendChild(button);
   });
-}
-
-function inferReplyOptions(reply) {
-  if (/\b(agree|agreement|consent)\b/i.test(reply)) {
-    return ["Agree", "Disagree"];
-  }
-  if (/\bconfirm\b/i.test(reply)) {
-    return ["Confirm", "Decline"];
-  }
-  if (/\b(do|does|did|is|are|can|could|would|will|have|has)\b[^?]*\?/i.test(reply)) {
-    return ["Yes", "No"];
-  }
-  return [];
 }
 
 async function createApplication() {
@@ -233,6 +230,11 @@ function renderApplication() {
     applicationState.status !== "VALIDATION_REQUIRED";
   byId("submit-btn").disabled =
     applicationState.status !== "READY_FOR_SUBMISSION";
+  byId("auto-documents-btn").disabled = ![
+    "IN_PROGRESS",
+    "DOCUMENTS_REQUIRED",
+    "DOCUMENTS_PROCESSING",
+  ].includes(applicationState.status);
   renderDocuments();
 }
 
@@ -363,10 +365,9 @@ async function sendMessage(messageOverride = null) {
     appendMessage("agent", result.reply || "Your application was updated.");
     await refreshApplication();
     const problemMentioned = /problem|issue|trouble|delay|cannot|can't|won't|will not|refus|help/i.test(message);
-    const responseOptions = (result.quick_replies || []).length
-      ? result.quick_replies
-      : inferReplyOptions(result.reply || "");
-    showQuickReplies(problemMentioned ? PROBLEM_OPTIONS : responseOptions);
+    showQuickReplies(
+      problemMentioned ? PROBLEM_OPTIONS : (result.quick_replies || []),
+    );
   } catch (error) {
     appendMessage("agent", `Unable to continue: ${error.message}`);
   } finally {
@@ -459,6 +460,29 @@ async function processDocument(record) {
     setNotice(`${DOCUMENT_LABELS[record.document_type]} processed.`, "success");
   } catch (error) {
     setNotice(error.message, "error");
+  }
+}
+
+async function createDemoDocuments() {
+  const button = byId("auto-documents-btn");
+  button.disabled = true;
+  button.textContent = "Creating demo documents...";
+  setNotice("Creating and uploading three demo documents...");
+  try {
+    applicationState = await api(
+      `/api/applications/${applicationId}/demo-documents`,
+      { method: "POST" },
+    );
+    renderApplication();
+    setNotice(
+      "Demo job letter, payslip, and salary assignment form uploaded.",
+      "success",
+    );
+  } catch (error) {
+    setNotice(error.message, "error");
+  } finally {
+    button.textContent = "Create demo documents";
+    renderApplication();
   }
 }
 
@@ -581,6 +605,7 @@ byId("msg-input").addEventListener("keydown", (event) => {
   }
 });
 byId("start-documents-btn").addEventListener("click", startDocumentCollection);
+byId("auto-documents-btn").addEventListener("click", createDemoDocuments);
 byId("save-consent-btn").addEventListener("click", saveConsent);
 byId("credit-pass-btn").addEventListener("click", () => recordCreditResult("PASS"));
 byId("credit-fail-btn").addEventListener("click", () => recordCreditResult("FAIL"));
