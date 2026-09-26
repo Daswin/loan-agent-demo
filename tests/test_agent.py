@@ -11,7 +11,7 @@ from backend.agent import (
     root_agent,
     save_application_section,
 )
-from backend.main import app
+from backend.main import _conversation_intent, app
 
 
 class _FakeSessionService:
@@ -56,9 +56,10 @@ class AgentTests(unittest.TestCase):
 
     def test_agent_instruction_contains_decision_safety_boundaries(self):
         instruction = AGENT_INSTRUCTION.lower()
+        normalized_instruction = " ".join(instruction.split())
         self.assertIn("do not approve", instruction)
         self.assertIn("do not approve, decline", instruction)
-        self.assertIn("not a lending decision", instruction)
+        self.assertIn("not a lending decision", normalized_instruction)
         self.assertIn("backend application state is authoritative", instruction)
 
     def test_agent_has_no_credit_result_selection_tool(self):
@@ -130,6 +131,72 @@ class AgentTests(unittest.TestCase):
             )
 
         self.assertEqual(response.status_code, 404)
+        self.assertIsNone(fake_runner.received_text)
+
+    def test_intent_router_preserves_questions_and_mixed_intent_for_agent(self):
+        conversation_messages = (
+            "Tell me why you need my personal email",
+            "ABC Limited, but why do you need my employer's name?",
+            "I am uncomfortable providing that information",
+            "I was wondering what happens next",
+            "Okay",
+        )
+        for message in conversation_messages:
+            with self.subTest(message=message):
+                self.assertEqual(
+                    _conversation_intent(message),
+                    "conversation",
+                )
+
+        self.assertEqual(_conversation_intent("keith@example.com"), "field_answer")
+        self.assertEqual(_conversation_intent("Let's continue"), "resume")
+
+    def test_question_is_not_saved_as_pending_field(self):
+        loan_application = application.create_application("keith")
+        pending_field = loan_application.completion["next_missing_field"]
+        completed_before = loan_application.completion["fields_completed"]
+        fake_runner = _FakeRunner()
+        client = TestClient(app)
+
+        with patch("backend.main.runner", fake_runner):
+            response = client.post(
+                "/api/chat",
+                json={
+                    "session_id": "question-session",
+                    "application_id": loan_application.application_id,
+                    "message": "Tell me why you need that information",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        current = application.get_application(loan_application.application_id)
+        self.assertEqual(current.completion["fields_completed"], completed_before)
+        self.assertEqual(current.completion["next_missing_field"], pending_field)
+        self.assertIn(
+            "Tell me why you need that information",
+            fake_runner.received_text,
+        )
+        self.assertEqual(response.json()["quick_replies"], [])
+
+    def test_obvious_field_answer_keeps_fast_path(self):
+        loan_application = application.create_application("dana")
+        pending_field = loan_application.completion["next_missing_field"]
+        fake_runner = _FakeRunner()
+        client = TestClient(app)
+
+        with patch("backend.main.runner", fake_runner):
+            response = client.post(
+                "/api/chat",
+                json={
+                    "session_id": "answer-session",
+                    "application_id": loan_application.application_id,
+                    "message": "clear.answer@example.com",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        current = application.get_application(loan_application.application_id)
+        self.assertIn(pending_field, current.provided_fields)
         self.assertIsNone(fake_runner.received_text)
 
 

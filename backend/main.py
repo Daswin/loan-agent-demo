@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 from typing import Any, Dict
 
 from fastapi import FastAPI, Header, HTTPException, status
@@ -143,22 +144,94 @@ PROBLEM_MARKERS = (
     "won't",
     "refuse",
     "help",
+    "concern",
+    "concerned",
+    "uncomfortable",
+    "worried",
+    "confused",
+    "understand",
+    "explain",
+    "clarify",
+    "wondering",
 )
+
+QUESTION_WORDS = {
+    "why",
+    "what",
+    "how",
+    "when",
+    "where",
+    "who",
+    "which",
+}
+
+QUESTION_OPENERS = (
+    "can you",
+    "could you",
+    "would you",
+    "will you",
+    "do you",
+    "does this",
+    "is this",
+    "is it",
+    "are you",
+    "should i",
+    "may i",
+    "tell me",
+    "please explain",
+    "please clarify",
+)
+
+RESUME_MESSAGES = {
+    "continue",
+    "continue the application",
+    "let's continue",
+    "lets continue",
+    "i'm ready to continue",
+    "im ready to continue",
+    "go ahead",
+    "proceed",
+    "next",
+}
+
+ACKNOWLEDGEMENT_MESSAGES = {
+    "ok",
+    "okay",
+    "i see",
+    "got it",
+    "understood",
+    "thanks",
+    "thank you",
+}
 
 
 def _quick_replies_for_field(field_path: str | None) -> list[str]:
     return FIELD_CHOICES.get(field_path or "", [])
 
 
-def _is_clear_field_answer(message: str) -> bool:
+def _conversation_intent(message: str) -> str:
+    """Conservatively route free text before the model handles intent."""
     normalized = message.strip().lower()
-    if not normalized or "?" in normalized:
-        return False
-    if any(marker in normalized for marker in PROBLEM_MARKERS):
-        return False
-    if normalized in {"i don't know", "not sure", "skip", "later"}:
-        return False
-    return len(normalized) <= 240
+    normalized = re.sub(r"\s+", " ", normalized)
+    if normalized in RESUME_MESSAGES:
+        return "resume"
+    if not normalized:
+        return "conversation"
+    words = set(re.findall(r"[a-z']+", normalized))
+    if (
+        "?" in normalized
+        or words.intersection(QUESTION_WORDS)
+        or normalized.startswith(QUESTION_OPENERS)
+        or any(marker in normalized for marker in PROBLEM_MARKERS)
+        or normalized in ACKNOWLEDGEMENT_MESSAGES
+        or normalized in {"i don't know", "not sure", "skip", "later"}
+    ):
+        return "conversation"
+    return "field_answer" if len(normalized) <= 240 else "conversation"
+
+
+def _is_clear_field_answer(message: str) -> bool:
+    return _conversation_intent(message) == "field_answer"
 
 
 def _application_or_404(application_id: str):
@@ -289,7 +362,8 @@ async def chat_endpoint(payload: ChatRequest):
         application = create_application()
 
     expected_field = application.completion.get("next_missing_field")
-    if expected_field and _is_clear_field_answer(payload.message):
+    conversation_intent = _conversation_intent(payload.message)
+    if expected_field and conversation_intent == "field_answer":
         current_application = update_application_field(
             application.application_id,
             expected_field,
@@ -394,8 +468,12 @@ async def chat_endpoint(payload: ChatRequest):
         "reply": reply_text,
         "application_id": current_application.application_id,
         "status": current_application.status.value,
-        "quick_replies": _quick_replies_for_field(
-            current_application.completion.get("next_missing_field")
+        "quick_replies": (
+            _quick_replies_for_field(
+                current_application.completion.get("next_missing_field")
+            )
+            if conversation_intent == "resume"
+            else []
         ),
     }
 
