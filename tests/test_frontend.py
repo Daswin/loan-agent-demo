@@ -30,6 +30,10 @@ class FrontendContractTests(unittest.TestCase):
 
     def test_frontend_uses_application_aware_api_contract(self):
         self.assertIn("application_id: applicationId", self.javascript)
+
+    def test_greeting_uses_backend_supplied_field_question(self):
+        self.assertIn("completion.next_missing_field_question", self.javascript)
+        self.assertNotIn("what is your ${nextLabel}", self.javascript)
         self.assertIn("/api/applications", self.javascript)
         self.assertIn("/upload-url", self.javascript)
         self.assertIn("/credit-consent", self.javascript)
@@ -83,12 +87,22 @@ class FrontendContractTests(unittest.TestCase):
     def test_navigation_and_conversation_choice_controls_are_present(self):
         self.assertIn('class="back-link" href="/"', self.html)
         self.assertIn('id="problem-btn"', self.html)
-        self.assertIn('id="quick-replies"', self.html)
+        self.assertNotIn('id="quick-replies"', self.html)
+        self.assertIn('container.id = "quick-replies"', self.javascript)
+        self.assertIn("chatWindow.appendChild(container)", self.javascript)
         self.assertIn("PROBLEM_OPTIONS", self.javascript)
         self.assertIn("FIELD_QUICK_REPLIES", self.javascript)
         self.assertNotIn("inferReplyOptions", self.javascript)
         self.assertNotIn('return ["Yes", "No"]', self.javascript)
         self.assertIn('["Agree", "Disagree"]', self.javascript)
+
+    def test_application_review_is_always_available_from_conversation(self):
+        self.assertIn('id="review-application-btn"', self.html)
+        self.assertIn('id="review-dialog"', self.html)
+        self.assertIn("APPLICATION_REVIEW_SECTIONS", self.javascript)
+        self.assertIn("applicationState.provided_fields", self.javascript)
+        self.assertIn("applicationState.documents", self.javascript)
+        self.assertIn("openApplicationReview", self.javascript)
 
     def test_demo_document_button_preserves_manual_upload_workflow(self):
         self.assertIn('id="auto-documents-btn"', self.html)

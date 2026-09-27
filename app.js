@@ -50,6 +50,55 @@ const FIELD_QUICK_REPLIES = {
   "loan_request.loan_purpose": ["Home improvement", "Education", "Medical expenses", "Debt consolidation", "Other"],
 };
 
+const APPLICATION_REVIEW_SECTIONS = [
+  {
+    title: "Identity",
+    fields: [
+      ["applicant.identity.first_name", "First name"],
+      ["applicant.identity.last_name", "Last name"],
+      ["applicant.identity.date_of_birth", "Date of birth"],
+      ["applicant.identity.trn_tax_id", "TRN"],
+      ["applicant.identity.primary_id.type", "Photo ID type"],
+      ["applicant.identity.primary_id.number", "Photo ID number"],
+    ],
+  },
+  {
+    title: "Contact and address",
+    fields: [
+      ["applicant.contact.personal_email", "Personal email address"],
+      ["applicant.contact.mobile_phone", "Mobile phone number"],
+      ["applicant.current_address.address_line_1", "Current street address"],
+      ["applicant.current_address.city_town", "Current city or town"],
+      ["applicant.current_address.parish_state", "Current parish or state"],
+    ],
+  },
+  {
+    title: "Employment and income",
+    fields: [
+      ["applicant.employment.employment_status", "Employment status"],
+      ["applicant.employment.employer_name", "Employer name"],
+      ["applicant.employment.job_title", "Job title"],
+      ["applicant.income.gross_monthly_salary", "Gross monthly salary"],
+      ["applicant.income.net_monthly_salary", "Net monthly salary"],
+      ["applicant.banking.primary_bank", "Primary bank"],
+    ],
+  },
+  {
+    title: "Loan request",
+    fields: [
+      ["loan_request.requested_amount", "Requested loan amount"],
+      ["loan_request.loan_purpose", "Loan purpose"],
+      ["loan_request.requested_term_months", "Requested loan term (months)"],
+    ],
+  },
+];
+
+const MONEY_FIELDS = new Set([
+  "applicant.income.gross_monthly_salary",
+  "applicant.income.net_monthly_salary",
+  "loan_request.requested_amount",
+]);
+
 const PROBLEM_OPTIONS = [
   "Problem: My documents are delayed",
   "Problem: My employer will not sign the salary assignment form",
@@ -115,7 +164,7 @@ function startFreshConversation(automatic = false) {
 
   const firstName = applicationState.personal.first_name;
   const completion = applicationState.completion || {};
-  const nextLabel = completion.next_missing_field_label;
+  const nextQuestion = completion.next_missing_field_question;
   if (automatic) {
     appendMessage(
       "agent",
@@ -126,8 +175,8 @@ function startFreshConversation(automatic = false) {
   let greetingReplies = [];
   if (!firstName) {
     greeting = "Hello! I can help collect your loan application information and documents. I do not approve or decline applications. What is your first name?";
-  } else if (nextLabel) {
-    greeting = `Hello, ${firstName}. You've already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I'm here to help you finish the rest, one step at a time. Let's begin with this: what is your ${nextLabel}?`;
+  } else if (nextQuestion) {
+    greeting = `Hello, ${firstName}. You've already made a good start and completed ${completion.fields_completed || 0} of the 20 details we need. I'm here to help you finish the rest, one step at a time. Let's begin with this: ${nextQuestion}`;
     greetingReplies = FIELD_QUICK_REPLIES[completion.next_missing_field] || [];
   } else if (!applicationState.credit_bureau.consent) {
     greeting = `Hello, ${firstName}. Your application information is complete. Please upload the three required documents next. Before we run the simulated credit-bureau check, do you consent to that check?`;
@@ -140,8 +189,13 @@ function startFreshConversation(automatic = false) {
 }
 
 function showQuickReplies(options = []) {
-  const container = byId("quick-replies");
-  container.replaceChildren();
+  byId("quick-replies")?.remove();
+  if (!options.length) return;
+
+  const container = document.createElement("div");
+  container.id = "quick-replies";
+  container.className = "quick-replies";
+  container.setAttribute("aria-label", "Suggested responses");
   options.forEach((option) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -150,6 +204,111 @@ function showQuickReplies(options = []) {
     button.addEventListener("click", () => sendMessage(option));
     container.appendChild(button);
   });
+  const chatWindow = byId("chat-window");
+  chatWindow.appendChild(container);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function getApplicationValue(path) {
+  return path.split(".").reduce(
+    (value, part) => value && value[part],
+    applicationState.application_data,
+  );
+}
+
+function formatReviewValue(path, value) {
+  if (MONEY_FIELDS.has(path) && typeof value === "number") {
+    return new Intl.NumberFormat("en-JM", {
+      style: "currency",
+      currency: "JMD",
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+  if (path === "applicant.identity.date_of_birth" && /^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    const [year, month, day] = String(value).split("-");
+    return `${day}/${month}/${year}`;
+  }
+  return String(value);
+}
+
+function appendReviewStat(container, label, value) {
+  const stat = document.createElement("div");
+  stat.className = "review-stat";
+  const statLabel = document.createElement("span");
+  statLabel.textContent = label;
+  const statValue = document.createElement("strong");
+  statValue.textContent = value;
+  stat.append(statLabel, statValue);
+  container.appendChild(stat);
+}
+
+function renderApplicationReview() {
+  if (!applicationState) return;
+  const completion = applicationState.completion || {};
+  const providedFields = new Set(applicationState.provided_fields || []);
+  const summary = byId("review-summary");
+  summary.replaceChildren();
+  appendReviewStat(
+    summary,
+    "Information",
+    `${completion.fields_completed || 0} of ${completion.fields_required || 20} complete`,
+  );
+  appendReviewStat(
+    summary,
+    "Documents",
+    `${completion.documents_completed || 0} of ${completion.documents_required || 3} complete`,
+  );
+  appendReviewStat(
+    summary,
+    "Credit consent",
+    applicationState.credit_bureau.consent ? "Provided" : "Not provided",
+  );
+
+  const fieldsContainer = byId("review-fields");
+  fieldsContainer.replaceChildren();
+  APPLICATION_REVIEW_SECTIONS.forEach((reviewSection) => {
+    const section = document.createElement("section");
+    section.className = "review-section";
+    const heading = document.createElement("h3");
+    heading.textContent = reviewSection.title;
+    const list = document.createElement("dl");
+    list.className = "review-grid";
+
+    reviewSection.fields.forEach(([path, label]) => {
+      const field = document.createElement("div");
+      const completed = providedFields.has(path);
+      field.className = `review-field${completed ? "" : " missing"}`;
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      const value = getApplicationValue(path);
+      description.textContent = completed && value !== "" && value !== null && value !== undefined
+        ? formatReviewValue(path, value)
+        : "Not yet provided";
+      field.append(term, description);
+      list.appendChild(field);
+    });
+    section.append(heading, list);
+    fieldsContainer.appendChild(section);
+  });
+
+  const documents = byId("review-documents");
+  documents.replaceChildren();
+  applicationState.documents.forEach((record) => {
+    const row = document.createElement("div");
+    row.className = "review-document";
+    const label = document.createElement("span");
+    label.textContent = DOCUMENT_LABELS[record.document_type] || record.document_type;
+    const status = document.createElement("strong");
+    status.textContent = record.status;
+    row.append(label, status);
+    documents.appendChild(row);
+  });
+}
+
+function openApplicationReview() {
+  renderApplicationReview();
+  byId("review-dialog").showModal();
 }
 
 async function createApplication() {
@@ -236,6 +395,7 @@ function renderApplication() {
     "DOCUMENTS_PROCESSING",
   ].includes(applicationState.status);
   renderDocuments();
+  if (byId("review-dialog").open) renderApplicationReview();
 }
 
 function renderDocuments() {
@@ -612,6 +772,8 @@ byId("credit-fail-btn").addEventListener("click", () => recordCreditResult("FAIL
 byId("validate-btn").addEventListener("click", validatePackage);
 byId("submit-btn").addEventListener("click", submitPackage);
 byId("problem-btn").addEventListener("click", () => showQuickReplies(PROBLEM_OPTIONS));
+byId("review-application-btn").addEventListener("click", openApplicationReview);
+byId("close-review-btn").addEventListener("click", () => byId("review-dialog").close());
 byId("reset-application-btn")?.addEventListener("click", resetApplication);
 window.setInterval(recordActivity, 60_000);
 

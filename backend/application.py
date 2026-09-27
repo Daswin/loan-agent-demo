@@ -12,6 +12,7 @@ from .models import (
 from .repository import build_repository
 from .application_data import (
     create_profile_data,
+    get_path,
     refresh_completion,
     update_application_field as update_structured_field,
 )
@@ -335,10 +336,11 @@ def update_application_field(
     """Save one confirmed structured application answer."""
     application = get_application(application_id)
     update_structured_field(application, field_path, value)
+    normalized_value = get_path(application.application_data, field_path)
     if field_path == "applicant.identity.first_name":
-        application.personal.first_name = str(value)
+        application.personal.first_name = str(normalized_value)
     elif field_path == "applicant.identity.last_name":
-        application.personal.last_name = str(value)
+        application.personal.last_name = str(normalized_value)
     application.updated_at = utc_now()
     save_application(application)
     return application

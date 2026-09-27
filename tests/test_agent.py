@@ -190,13 +190,41 @@ class AgentTests(unittest.TestCase):
                 json={
                     "session_id": "answer-session",
                     "application_id": loan_application.application_id,
-                    "message": "clear.answer@example.com",
+                    "message": "123456789",
                 },
             )
 
         self.assertEqual(response.status_code, 200)
         current = application.get_application(loan_application.application_id)
         self.assertIn(pending_field, current.provided_fields)
+        self.assertIsNone(fake_runner.received_text)
+        self.assertNotIn("making good progress", response.json()["reply"].lower())
+        self.assertTrue(response.json()["reply"].startswith("Thank you, I’ve added that."))
+
+    def test_invalid_field_answer_stays_on_the_same_question(self):
+        loan_application = application.create_application("dana")
+        pending_field = loan_application.completion["next_missing_field"]
+        completed_before = loan_application.completion["fields_completed"]
+        self.assertEqual(pending_field, "applicant.identity.trn_tax_id")
+        fake_runner = _FakeRunner()
+        client = TestClient(app)
+
+        with patch("backend.main.runner", fake_runner):
+            response = client.post(
+                "/api/chat",
+                json={
+                    "session_id": "invalid-answer-session",
+                    "application_id": loan_application.application_id,
+                    "message": "123-456-789",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        current = application.get_application(loan_application.application_id)
+        self.assertEqual(current.completion["fields_completed"], completed_before)
+        self.assertEqual(current.completion["next_missing_field"], pending_field)
+        self.assertIn("exactly 9 numbers", response.json()["reply"])
+        self.assertIn("What is your nine-digit TRN?", response.json()["reply"])
         self.assertIsNone(fake_runner.received_text)
 
 

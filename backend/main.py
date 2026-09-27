@@ -41,7 +41,7 @@ from .documents import (
 from .document_processing import process_document_with_document_ai
 from .demo_documents import generate_and_upload_demo_documents
 from .models import CreditResult, DocumentType
-from .application_data import field_label
+from .field_rules import field_question
 from .form_generation import (
     generate_salary_assignment_form,
     salary_assignment_filename,
@@ -364,16 +364,24 @@ async def chat_endpoint(payload: ChatRequest):
     expected_field = application.completion.get("next_missing_field")
     conversation_intent = _conversation_intent(payload.message)
     if expected_field and conversation_intent == "field_answer":
-        current_application = update_application_field(
-            application.application_id,
-            expected_field,
-            payload.message.strip(),
-        )
+        try:
+            current_application = update_application_field(
+                application.application_id,
+                expected_field,
+                payload.message.strip(),
+            )
+        except ValueError as exc:
+            return {
+                "reply": f"I couldn't save that yet. {exc} {field_question(expected_field)}",
+                "application_id": application.application_id,
+                "status": application.status.value,
+                "quick_replies": _quick_replies_for_field(expected_field),
+            }
         next_field = current_application.completion.get("next_missing_field")
         if next_field:
             reply_text = (
-                "Thank you, I’ve added that. You’re making good progress. "
-                f"Next, what is your {field_label(next_field)}?"
+                "Thank you, I’ve added that. "
+                f"Next question: {field_question(next_field)}"
             )
         else:
             if current_application.credit_bureau.consent:
@@ -437,6 +445,7 @@ async def chat_endpoint(payload: ChatRequest):
         f"workflow_status: {application.status.value}\n"
         f"frontend_greeting_already_shown: true\n"
         f"expected_single_field: {expected_field or 'none'}\n"
+        f"expected_field_question: {field_question(expected_field) if expected_field else 'none'}\n"
         "</trusted_application_context>\n\n"
         "<applicant_message>\n"
         f"{payload.message}\n"

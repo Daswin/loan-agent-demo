@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .field_rules import field_label, field_question, validate_field_value
 from .models import DocumentStatus, LoanApplication
 
 
@@ -135,7 +136,8 @@ def _demo_value(path: str, profile_id: str) -> Any:
         "applicant.identity.nationality": "Jamaican",
         "applicant.identity.citizenship": "Jamaican",
         "applicant.identity.country_of_residence": "Jamaica",
-        "applicant.identity.trn_tax_id": f"10{index}-20{index}-30{index}",
+        "applicant.identity.date_of_birth": f"198{index}-0{(index % 9) + 1}-15",
+        "applicant.identity.trn_tax_id": f"10{index}20{index}30{index}",
         "applicant.contact.personal_email": f"{first_name.lower()}.{last_name.lower()}@example.com",
         "applicant.contact.mobile_phone": f"876-555-01{index:02d}",
         "applicant.current_address.address_line_1": f"{10 + index} Hope Road",
@@ -151,7 +153,7 @@ def _demo_value(path: str, profile_id: str) -> Any:
         "applicant.income.pay_frequency": "Monthly",
         "applicant.banking.primary_bank": "Meridian Private Bank",
         "loan_request.product_type": "Digital Personal Loan",
-        "loan_request.loan_purpose": ["Home improvement", "Education", "Business equipment", "Medical expenses", "Debt consolidation"][index - 1],
+        "loan_request.loan_purpose": ["Home improvement", "Education", "Other", "Medical expenses", "Debt consolidation"][index - 1],
         "loan_request.preferred_repayment_frequency": "Monthly",
         "loan_request.requested_term_months": 36 + index * 6,
         "applicant.identity.primary_id.type": "Driver's Licence",
@@ -230,22 +232,22 @@ def create_profile_data(
 
     for path in paths:
         if path in provided:
-            set_path(data, path, _demo_value(path, profile_id))
+            set_path(
+                data,
+                path,
+                validate_field_value(path, _demo_value(path, profile_id)),
+            )
 
     first_name, last_name = PROFILE_NAMES[profile_id]
     set_path(data, "applicant.identity.first_name", first_name)
     set_path(data, "applicant.identity.last_name", last_name)
     if requested_amount is not None:
-        set_path(data, "loan_request.requested_amount", requested_amount)
+        set_path(
+            data,
+            "loan_request.requested_amount",
+            validate_field_value("loan_request.requested_amount", requested_amount),
+        )
     return data, sorted(provided & set(paths))
-
-
-def field_label(path: str) -> str:
-    section = path.split(".")[-2] if len(path.split(".")) > 1 else "application"
-    field = path.split(".")[-1]
-    if field.isdigit():
-        field = path.split(".")[-2]
-    return f"{field.replace('_', ' ').title()} ({section.replace('_', ' ')})"
 
 
 def calculate_completion(application: LoanApplication) -> dict[str, Any]:
@@ -280,6 +282,7 @@ def calculate_completion(application: LoanApplication) -> dict[str, Any]:
         "documents_required": len(required_documents),
         "next_missing_field": missing[0] if missing else None,
         "next_missing_field_label": field_label(missing[0]) if missing else None,
+        "next_missing_field_question": field_question(missing[0]) if missing else None,
         "missing_fields": missing,
     }
 
@@ -296,7 +299,8 @@ def update_application_field(
     required = set(required_field_paths(application.application_data))
     if field_path not in required:
         raise ValueError(f"'{field_path}' is not an applicable application field.")
-    set_path(application.application_data, field_path, value)
+    normalized_value = validate_field_value(field_path, value)
+    set_path(application.application_data, field_path, normalized_value)
     if field_path not in application.provided_fields:
         application.provided_fields.append(field_path)
         application.provided_fields.sort()
