@@ -42,10 +42,19 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("/submit", self.javascript)
 
     def test_operator_controls_explain_non_decision_semantics(self):
-        self.assertIn("Demo operator controls", self.html)
+        self.assertIn("Simulated Credit Bureau Evaluation", self.html)
+        self.assertIn("Credit Check Pass", self.html)
+        self.assertIn("Credit Check Failed", self.html)
         self.assertIn("does not approve or decline", self.html)
         self.assertIn("Process document", self.javascript)
         self.assertIn("/process", self.javascript)
+
+    def test_failed_credit_check_blocks_workflow_actions_with_tooltips(self):
+        self.assertIn('id="validate-action"', self.html)
+        self.assertIn('id="submit-action"', self.html)
+        self.assertIn("failed simulated credit check prevents", self.html)
+        self.assertIn('credit_bureau.result === "FAIL"', self.javascript)
+        self.assertIn('classList.toggle("credit-blocked", creditCheckFailed)', self.javascript)
 
     def test_messages_are_rendered_without_inner_html(self):
         self.assertNotIn("innerHTML", self.javascript)
@@ -85,7 +94,14 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("Upload failed:", self.javascript)
 
     def test_navigation_and_conversation_choice_controls_are_present(self):
-        self.assertIn('class="back-link" href="/"', self.html)
+        self.assertIn('class="header-link" href="/"', self.html)
+
+    def test_responsive_workspace_navigation_is_present(self):
+        self.assertIn('data-tab-target="chat-panel"', self.html)
+        self.assertIn('data-tab-target="documents-panel"', self.html)
+        self.assertIn('data-tab-target="application-panel"', self.html)
+        self.assertIn('class="mobile-nav"', self.html)
+        self.assertIn('document.querySelectorAll("[data-tab-target]")', self.javascript)
         self.assertIn('id="problem-btn"', self.html)
         self.assertNotIn('id="quick-replies"', self.html)
         self.assertIn('container.id = "quick-replies"', self.javascript)
@@ -104,12 +120,23 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("applicationState.documents", self.javascript)
         self.assertIn("openApplicationReview", self.javascript)
 
+    def test_validation_and_credit_fail_modals_are_present(self):
+        self.assertIn("Validate Application", self.html)
+        self.assertIn("Submit Application", self.html)
+        self.assertIn('id="status-dialog"', self.html)
+        self.assertIn("showIncompleteApplicationDialog", self.javascript)
+        self.assertIn("error.details?.missing_items", self.javascript)
+        self.assertIn("showCreditFailDialog", self.javascript)
+        for product in ("Pay Advance", "Credit Card", "Fast Cash", "A smaller personal loan"):
+            self.assertIn(product, self.javascript)
+        self.assertIn("does not approve or decline", self.javascript)
+
     def test_demo_document_button_preserves_manual_upload_workflow(self):
         self.assertIn('id="auto-documents-btn"', self.html)
         self.assertIn("/demo-documents", self.javascript)
         self.assertIn('input.type = "file"', self.javascript)
         self.assertIn("uploadDocument(", self.javascript)
-        self.assertIn("Submit package", self.html)
+        self.assertIn("Submit Application", self.html)
 
     def test_manual_and_inactivity_reset_controls_are_present(self):
         self.assertIn('id="reset-application-btn"', self.html)

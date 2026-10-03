@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from .agent import root_agent
 from .application import (
+    PackageValidationError,
     begin_document_collection,
     complete_validation,
     create_application,
@@ -807,6 +808,14 @@ async def validate_application_endpoint(application_id: str):
     _application_or_404(application_id)
     try:
         return complete_validation(application_id)
+    except PackageValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": str(exc),
+                "missing_items": exc.missing_items,
+            },
+        ) from exc
     except ValueError as exc:
         raise _bad_request(exc) from exc
 
@@ -816,6 +825,14 @@ async def submit_application_endpoint(application_id: str):
     _application_or_404(application_id)
     try:
         return submit_to_bank(application_id)
+    except PackageValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": str(exc),
+                "missing_items": exc.missing_items,
+            },
+        ) from exc
     except ValueError as exc:
         raise _bad_request(exc) from exc
     except Exception as exc:

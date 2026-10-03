@@ -1,7 +1,12 @@
 from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
-from .application import get_application, set_application_status, utc_now
+from .application import (
+    assert_package_complete,
+    get_application,
+    set_application_status,
+    utc_now,
+)
 from .models import ApplicationStatus, LoanApplication
 
 
@@ -42,6 +47,8 @@ def submit_application(
         raise ValueError(
             "Application must be READY_FOR_SUBMISSION before submission."
         )
+
+    assert_package_complete(application)
 
     bank_transport = transport or _simulated_bank_transport
 

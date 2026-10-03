@@ -19,6 +19,7 @@ COPY --from=landing-builder /landing/dist/ /usr/share/nginx/html/
 RUN mkdir -p /usr/share/nginx/html/application
 COPY index.html /usr/share/nginx/html/application/index.html
 COPY app.js /usr/share/nginx/html/application/app.js
+COPY assets/ /usr/share/nginx/html/application/assets/
 COPY config.js /usr/share/nginx/html/application/config.js
 COPY config.template.js /usr/share/nginx/html/application/config.template.js
 COPY frontend-entrypoint.sh /frontend-entrypoint.sh

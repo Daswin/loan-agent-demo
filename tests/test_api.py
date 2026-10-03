@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from backend import application
+from backend.application_data import _demo_value
 from backend.main import app
 from backend.models import DocumentType
 
@@ -18,8 +19,11 @@ class ApiTests(unittest.TestCase):
     def tearDown(self):
         application._APPLICATIONS.clear()
 
-    def _create_application(self):
-        response = self.client.post("/api/applications")
+    def _create_application(self, profile_id=None):
+        response = self.client.post(
+            "/api/applications",
+            json={"profile_id": profile_id} if profile_id else None,
+        )
         self.assertEqual(response.status_code, 201)
         return response.json()
 
@@ -84,9 +88,15 @@ class ApiTests(unittest.TestCase):
         response = self.client.post("/api/decision", json={})
         self.assertEqual(response.status_code, 404)
 
-    def test_full_fail_result_workflow_ends_in_received(self):
-        created = self._create_application()
+    def test_full_fail_result_workflow_is_blocked_without_decline(self):
+        created = self._create_application("marcus")
         application_id = created["application_id"]
+        for field_path in created["completion"]["missing_fields"]:
+            response = self.client.patch(
+                f"/api/applications/{application_id}/fields/{field_path}",
+                json={"value": _demo_value(field_path, "marcus")},
+            )
+            self.assertEqual(response.status_code, 200)
         self._process_all_documents(application_id)
 
         consent = self.client.post(
@@ -105,19 +115,42 @@ class ApiTests(unittest.TestCase):
         validation = self.client.post(
             f"/api/applications/{application_id}/validate"
         )
-        self.assertEqual(validation.status_code, 200)
-        self.assertEqual(validation.json()["status"], "READY_FOR_SUBMISSION")
-
-        submitted = self.client.post(
-            f"/api/applications/{application_id}/submit"
+        self.assertEqual(validation.status_code, 400)
+        self.assertIn(
+            "must return PASS",
+            " ".join(validation.json()["detail"]["missing_items"]),
         )
-        self.assertEqual(submitted.status_code, 200)
-        self.assertEqual(submitted.json()["status"], "RECEIVED")
-        self.assertNotIn("approved", submitted.text.lower())
-        self.assertNotIn("declined", submitted.text.lower())
+        self.assertNotIn("approved", validation.text.lower())
+        self.assertNotIn("declined", validation.text.lower())
 
         fetched = self.client.get(f"/api/applications/{application_id}")
-        self.assertEqual(fetched.json()["status"], "SUBMITTED")
+        self.assertEqual(fetched.json()["status"], "VALIDATION_REQUIRED")
+
+    def test_validation_returns_customer_facing_missing_items(self):
+        created = self._create_application("dana")
+        application_id = created["application_id"]
+        self._process_all_documents(application_id)
+        self.client.post(
+            f"/api/applications/{application_id}/credit-consent",
+            json={"consent": True},
+        )
+        self.client.post(
+            f"/api/applications/{application_id}/credit-check",
+            json={"result": "PASS"},
+        )
+
+        response = self.client.post(
+            f"/api/applications/{application_id}/validate"
+        )
+
+        self.assertEqual(response.status_code, 400)
+        detail = response.json()["detail"]
+        self.assertIn("missing_items", detail)
+        self.assertIn("TRN", detail["missing_items"])
+        self.assertEqual(
+            self.client.get(f"/api/applications/{application_id}").json()["status"],
+            "VALIDATION_REQUIRED",
+        )
 
     def test_signed_upload_uses_canonical_storage_path(self):
         created = self._create_application()

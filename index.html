@@ -86,6 +86,16 @@
     .review-field.missing dd { color: #8a6400; font-weight: 500; }
     .review-documents { display: grid; gap: 7px; }
     .review-document { display: flex; justify-content: space-between; gap: 12px; padding: 9px 11px; border: 1px solid #dce3ec; border-radius: 8px; background: white; }
+    .status-dialog { width: min(560px, calc(100% - 32px)); }
+    .status-dialog .review-content { max-height: min(62vh, 560px); }
+    .status-message { margin: 0 0 14px; color: #405269; line-height: 1.5; }
+    .status-list { margin: 0; padding-left: 22px; color: #243f61; }
+    .status-list li { margin: 8px 0; padding-left: 3px; }
+    .status-list li::marker { color: #b58c12; }
+    .credit-fail-note { margin-top: 16px; padding: 11px 12px; border-left: 3px solid #d4af37; background: #f8f2df; color: #405269; font-size: .84rem; }
+    .workflow-action { position: relative; display: inline-flex; }
+    .workflow-action.credit-blocked::after { content: attr(data-tooltip); position: absolute; z-index: 4; left: 50%; bottom: calc(100% + 9px); width: 245px; padding: 8px 10px; border-radius: 7px; background: #081529; color: white; font-size: .74rem; font-weight: 500; line-height: 1.35; text-align: left; box-shadow: 0 7px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transform: translate(-50%, 4px); transition: opacity .15s, transform .15s; }
+    .workflow-action.credit-blocked:hover::after, .workflow-action.credit-blocked:focus-within::after { opacity: 1; transform: translate(-50%, 0); }
     @media (max-width: 850px) {
       main { grid-template-columns: 1fr; }
       .workflow-card { grid-column: auto; }
@@ -93,90 +103,188 @@
       .review-grid { grid-template-columns: 1fr; }
       .review-summary { grid-template-columns: 1fr; }
     }
+
+    /* FirstBank-inspired responsive application experience */
+    body { min-height: 100vh; background: #f7f8fb; color: #071f4d; }
+    .site-header { position: fixed; z-index: 20; inset: 0 0 auto; height: 78px; padding: 0 clamp(24px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,.82); border: 0; backdrop-filter: blur(18px); }
+    .brand-lockup, .header-links { display: flex; align-items: center; gap: 18px; }
+    .brand-mark { position: relative; width: 39px; height: 27px; transform: skew(-18deg); }
+    .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border-radius: 9px 3px 9px 3px; background: linear-gradient(135deg,#36a6f2,#0a3d91 68%); }
+    .brand-mark::before { width: 30px; height: 11px; top: 1px; right: 0; }
+    .brand-mark::after { width: 25px; height: 11px; bottom: 1px; left: 0; }
+    .brand-name { font-size: 1.33rem; font-weight: 700; letter-spacing: -.03em; }
+    .brand-divider { width: 1px; height: 28px; background: #d4dae4; }
+    .brand-context { color: #17355f; font-size: .94rem; }
+    .header-link { display: inline-flex; align-items: center; gap: 7px; color: #17355f; text-decoration: none; font-size: .9rem; }
+    .experience { position: relative; min-height: 100vh; max-width: none; margin: 0; padding: 108px clamp(24px,4.5vw,74px) 44px; display: grid; grid-template-columns: minmax(340px,.82fr) minmax(480px,1.05fr); align-items: center; gap: clamp(34px,6vw,104px); overflow: hidden; background-image: linear-gradient(90deg,rgba(255,255,255,.97) 0%,rgba(255,255,255,.86) 26%,rgba(255,255,255,.08) 62%),url('/application/assets/loan-assistant-hero.png'); background-size: cover; background-position: center; }
+    .hero-copy { position: relative; z-index: 2; max-width: 410px; align-self: center; padding: 20px 0; }
+    .eyebrow { display: flex; align-items: center; gap: 14px; color: #41628f; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 34px; height: 2px; background: #2675dc; }
+    .hero-copy h1 { margin: 20px 0 18px; color: #061e4a; font: 600 clamp(2.9rem,4.3vw,4.5rem)/.99 'Cinzel',serif; letter-spacing: -.045em; }
+    .hero-copy > p { max-width: 350px; color: #526d96; font-size: 1.02rem; line-height: 1.55; }
+    .benefits { display: grid; gap: 15px; margin-top: 34px; }
+    .benefit { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; }
+    .benefit-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.88); box-shadow: 0 7px 18px rgba(27,59,102,.1); font-size: 1.2rem; }
+    .benefit strong, .benefit span { display: block; }
+    .benefit strong { font-size: .92rem; }
+    .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
+    .assistant-shell { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
+    .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px 12px; }
+    .assistant-identity { display: flex; align-items: center; gap: 12px; }
+    .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 250px auto; background-position: 57% 21%; }
+    .assistant-avatar { width: 48px; height: 48px; flex: 0 0 auto; border: 2px solid white; border-radius: 50%; box-shadow: 0 4px 13px rgba(15,43,78,.18); }
+    .assistant-title strong { display: block; font-size: .94rem; }
+    .assistant-title span { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: #5e7190; font-size: .76rem; }
+    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #51c675; }
+    .assistant-menu { color: #17355f; letter-spacing: .18em; }
+    .workspace-tabs { display: flex; gap: 5px; padding: 0 18px 12px; border-bottom: 1px solid rgba(18,56,102,.1); }
+    .tab-button { flex: 1; padding: 9px 7px; border: 0; border-radius: 9px; color: #5c7192; background: transparent; font-size: .76rem; }
+    .tab-button:hover:not(:disabled) { transform: none; background: rgba(255,255,255,.55); }
+    .tab-button.active { color: #0c54bc; background: rgba(255,255,255,.82); box-shadow: 0 4px 14px rgba(28,63,105,.08); }
+    .tab-panel { display: none; min-height: 0; flex: 1; overflow-y: auto; padding: 14px 20px 20px; }
+    .tab-panel.active { display: flex; flex-direction: column; }
+    .application-bar { margin: 0 0 9px; }
+    .application-actions { gap: 6px; }
+    .review-button,.reset-button { padding: 6px 8px; }
+    .completion { margin: 0 0 8px; padding: 9px 11px; background: rgba(255,255,255,.64); }
+    .completion-meta,.completion-guidance { font-size: .7rem; }
+    .completion-guidance { margin-top: 6px; }
+    .conversation-heading { margin: 8px 0 3px; color: #092351; font: 600 1rem 'Cinzel',serif; }
+    #chat-window { height: auto; min-height: 0; flex: 1; border: 0; padding: 8px 5px 16px; background: transparent; }
+    .message { position: relative; max-width: 78%; margin: 13px 0; padding: 13px 15px; border-radius: 19px; line-height: 1.45; box-shadow: 0 6px 18px rgba(31,51,77,.06); }
+    .message.agent { margin-left: 49px; background: rgba(255,255,255,.9); border: 0; }
+    .message.agent::before { content: ""; position: absolute; left: -49px; top: 2px; width: 37px; height: 37px; border: 2px solid white; border-radius: 50%; }
+    .message.user { margin-left: auto; color: #082354; background: #dceaff; }
+    .composer { margin: 4px 0 0; padding: 6px; border-radius: 22px; background: rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(31,51,77,.1); }
+    .composer::before { content: "⌕"; width: 30px; color: #607595; text-align: center; font-size: 1.2rem; transform: rotate(-30deg); }
+    .composer input[type="text"] { border: 0; background: transparent; outline: 0; }
+    .composer #send-btn { width: 43px; height: 43px; padding: 0; border-radius: 50%; font-size: 0; }
+    .composer #send-btn::after { content: "➤"; font-size: 1.05rem; }
+    .conversation-actions { margin-top: 7px; }
+    .panel-title { margin: 4px 0 5px; color: #092351; font: 600 1.55rem 'Cinzel',serif; }
+    .panel-intro { margin: 0 0 14px; color: #667c9e; font-size: .85rem; line-height: 1.45; }
+    .documents-card,.workflow-card { position: static; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    #document-list { display: grid; gap: 10px; }
+    .document { padding: 15px; border: 1px solid rgba(19,57,102,.08); border-radius: 16px; background: rgba(255,255,255,.86); box-shadow: 0 7px 22px rgba(30,59,94,.07); }
+    .document:first-child { border-top: 1px solid rgba(19,57,102,.08); }
+    .document-controls { align-items: center; }
+    .document input { max-width: 100%; }
+    .workflow-grid { display: grid; grid-template-columns: 1fr; gap: 11px; }
+    .workflow-grid .panel { margin: 0; padding: 14px; border: 1px solid rgba(19,57,102,.09); border-radius: 14px; background: rgba(255,255,255,.8); }
+    .operator { background: rgba(247,241,220,.88) !important; }
+    .global-notice { min-height: 0; margin: 0 20px 8px; padding: 0; font-size: .8rem; }
+    .mobile-nav { display: none; }
+    .mobile-menu { display: none; }
+
+    @media (max-width: 920px) {
+      .site-header { position: absolute; height: 72px; padding: 0 22px; background: transparent; }
+      .brand-divider,.brand-context,.header-links { display: none; }
+      .mobile-menu { display: block; border: 0; padding: 4px; color: #0b376f; background: transparent; font-size: 1.5rem; }
+      .experience { min-height: 100dvh; padding: 82px 18px 82px; display: block; overflow: visible; background-image: linear-gradient(180deg,rgba(255,255,255,.93) 0%,rgba(255,255,255,.36) 29%,rgba(246,241,233,.9) 63%,#f7f8fb 100%),url('/application/assets/loan-assistant-hero.png'); background-size: auto 720px; background-repeat: no-repeat; background-position: 55% 0; }
+      .hero-copy { min-height: 430px; max-width: 100%; padding: 88px 22px 0; }
+      .hero-copy .eyebrow,.benefits { display: none; }
+      .hero-copy h1 { width: 72%; margin: 0 0 15px; font-size: clamp(2.2rem,10vw,3.15rem); }
+      .hero-copy > p { width: 67%; margin: 0; font-size: .86rem; }
+      .assistant-shell { width: 100%; height: auto; min-height: 590px; overflow: visible; border: 0; border-radius: 24px 24px 0 0; background: rgba(249,246,240,.88); box-shadow: 0 -8px 30px rgba(35,42,52,.08); backdrop-filter: blur(18px); }
+      .assistant-header { padding: 17px 18px 8px; }
+      .workspace-tabs { display: none; }
+      .tab-panel { min-height: 570px; padding: 12px 15px 20px; overflow: visible; }
+      .tab-panel:not(.active) { display: none; }
+      .tab-panel.active { display: flex; }
+      .application-bar,.completion,.conversation-heading { display: none; }
+      #chat-window { min-height: 420px; overflow: visible; }
+      .message { max-width: 79%; }
+      .composer { position: sticky; bottom: 72px; z-index: 5; }
+      .conversation-actions { padding-bottom: 4px; }
+      .mobile-nav { position: fixed; z-index: 25; inset: auto 0 0; height: 70px; display: grid; grid-template-columns: repeat(4,1fr); padding: 7px 12px max(7px,env(safe-area-inset-bottom)); border-top: 1px solid #e2e7ee; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
+      .mobile-nav .tab-button { display: grid; justify-items: center; gap: 2px; padding: 4px; border-radius: 8px; font-size: .68rem; }
+      .nav-icon { font-size: 1.17rem; line-height: 1; }
+      .global-notice { margin: 0 15px 7px; }
+    }
+
+    @media (max-width: 520px) {
+      .brand-name { font-size: 1.15rem; }
+      .experience { padding-inline: 0; }
+      .hero-copy { padding-inline: 28px; }
+      .assistant-shell { border-radius: 22px 22px 0 0; }
+      .assistant-title strong { font-size: .87rem; }
+      .application-actions { justify-content: flex-start; }
+      dialog { width: calc(100% - 20px); }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <div><h1>Loan Application Assistant</h1><p>Application intake and document submission—not loan approval or underwriting.</p></div>
-      <a class="back-link" href="/">← Back to customer selection</a>
+  <header class="site-header">
+    <div class="brand-lockup">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">FirstBank</span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-context">Loan Application</span>
     </div>
+    <nav class="header-links" aria-label="Utility navigation">
+      <a class="header-link" href="/">▣ &nbsp; Save &amp; Exit</a>
+      <a class="header-link" href="#assistant-workspace">ⓘ &nbsp; Help</a>
+    </nav>
+    <span class="mobile-menu" aria-hidden="true">☰</span>
   </header>
 
-  <main>
-    <section class="card">
-      <div class="application-bar">
-        <div>
-          <div class="muted" id="customer-name">New applicant</div>
-          <strong id="application-id">Starting…</strong>
-        </div>
-        <div class="application-actions">
-          <span class="badge" id="application-status">INITIALIZING</span>
-          <button id="review-application-btn" class="review-button" type="button">Review application</button>
-          <button id="reset-application-btn" class="reset-button" type="button">Reset application</button>
-        </div>
+  <main class="experience">
+    <section class="hero-copy" aria-labelledby="hero-heading">
+      <div class="eyebrow">We're here for you</div>
+      <h1 id="hero-heading">Let’s make<br>your next step<br>happen.</h1>
+      <p>Our loan application assistant will guide you, answer your questions, and help you gather everything you need — one step at a time.</p>
+      <div class="benefits" aria-label="Service benefits">
+        <div class="benefit"><span class="benefit-icon">♢</span><div><strong>Secure</strong><span>Your information is protected</span></div></div>
+        <div class="benefit"><span class="benefit-icon">ϟ</span><div><strong>Guided</strong><span>We'll help you every step of the way</span></div></div>
+        <div class="benefit"><span class="benefit-icon">⇧</span><div><strong>Simple</strong><span>Upload documents easily</span></div></div>
       </div>
-
-      <div class="completion" aria-label="Application completion">
-        <div class="completion-head"><span>Application completion</span><strong id="completion-value">0%</strong></div>
-        <div id="completion-track" class="completion-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="completion-bar" class="completion-fill"></div></div>
-        <div class="completion-meta"><span id="information-progress">Information 0%</span><span id="documents-progress">Documents 0%</span></div>
-        <p id="completion-guidance" class="completion-guidance"></p>
-      </div>
-
-      <h2>Application conversation</h2>
-      <div id="chat-window" aria-live="polite"></div>
-      <div class="row">
-        <input id="msg-input" type="text" placeholder="Type your response…" autocomplete="off">
-        <button id="send-btn" type="button">Send</button>
-      </div>
-      <div class="conversation-actions"><button id="problem-btn" class="problem-button" type="button">Having a problem?</button></div>
     </section>
 
-    <section class="card documents-card">
-      <h2>Required documents</h2>
-      <p class="muted">Upload each file into its named document slot.</p>
-      <div class="row">
-        <button id="start-documents-btn" class="secondary" type="button">Start document collection</button>
-        <button id="auto-documents-btn" class="warning" type="button">Create demo documents</button>
+    <section id="assistant-workspace" class="assistant-shell" aria-label="Loan application workspace">
+      <div class="assistant-header">
+        <div class="assistant-identity"><span class="assistant-avatar" aria-hidden="true"></span><div class="assistant-title"><strong>Loan Assistant</strong><span><i class="online-dot"></i> Online</span></div></div>
+        <span class="assistant-menu" aria-hidden="true">••• &nbsp;—</span>
       </div>
-      <div id="document-list"></div>
-    </section>
+      <nav class="workspace-tabs" aria-label="Application sections">
+        <button class="tab-button active" type="button" data-tab-target="chat-panel">Chat</button>
+        <button class="tab-button" type="button" data-tab-target="documents-panel">Documents</button>
+        <button class="tab-button" type="button" data-tab-target="application-panel">Application</button>
+        <button class="tab-button review-tab" type="button">Review</button>
+      </nav>
 
-    <section class="card workflow-card">
-      <h2>Workflow controls</h2>
+      <section id="chat-panel" class="tab-panel active">
+        <div class="application-bar"><div><div class="muted" id="customer-name">New applicant</div><strong id="application-id">Starting…</strong></div><div class="application-actions"><span class="badge" id="application-status">INITIALIZING</span><button id="review-application-btn" class="review-button" type="button">Review</button><button id="reset-application-btn" class="reset-button" type="button">Reset</button></div></div>
+        <div class="completion" aria-label="Application completion"><div class="completion-head"><span>Application completion</span><strong id="completion-value">0%</strong></div><div id="completion-track" class="completion-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="completion-bar" class="completion-fill"></div></div><div class="completion-meta"><span id="information-progress">Information 0%</span><span id="documents-progress">Documents 0%</span></div><p id="completion-guidance" class="completion-guidance"></p></div>
+        <h2 class="conversation-heading">Application conversation</h2>
+        <div id="chat-window" aria-live="polite"></div>
+        <div class="row composer"><input id="msg-input" type="text" placeholder="Type your message…" autocomplete="off"><button id="send-btn" type="button">Send</button></div>
+        <div class="conversation-actions"><button id="problem-btn" class="problem-button" type="button">Having a problem?</button></div>
+      </section>
 
-      <div class="workflow-grid">
-        <section class="panel">
-          <h3>Credit bureau consent</h3>
-          <p class="muted">Consent must be explicitly provided by the applicant.</p>
-          <label><input id="consent-checkbox" type="checkbox"> I consent to the simulated credit check.</label>
-          <div class="row"><button id="save-consent-btn" type="button">Save consent</button></div>
-        </section>
+      <section id="documents-panel" class="tab-panel documents-card">
+        <h2 class="panel-title">Upload Your Documents</h2><p class="panel-intro">Upload each required document. You can take a photo, upload a file, or use a template where available.</p>
+        <div class="row"><button id="start-documents-btn" class="secondary" type="button">Start document collection</button><button id="auto-documents-btn" class="warning" type="button">Create demo documents</button></div>
+        <div id="document-list"></div>
+      </section>
 
-        <section class="panel operator">
-          <h3>Demo operator controls</h3>
-          <p class="muted">PASS/FAIL records a simulated bureau result only. It does not approve or decline the loan.</p>
-          <div class="row">
-            <button id="credit-pass-btn" class="success" type="button">Record PASS</button>
-            <button id="credit-fail-btn" class="warning" type="button">Record FAIL</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h3>Final package</h3>
-          <p class="muted">Validation checks workflow completeness; it performs no underwriting.</p>
-          <div class="row">
-            <button id="validate-btn" class="secondary" type="button">Validate package</button>
-            <button id="submit-btn" class="success" type="button">Submit package</button>
-          </div>
-          <div id="receipt" class="panel" hidden></div>
-        </section>
-      </div>
-
-      <p id="notice" aria-live="polite"></p>
+      <section id="application-panel" class="tab-panel workflow-card">
+        <h2 class="panel-title">Application</h2><p class="panel-intro">Manage consent, the simulated credit evaluation, validation, and submission.</p>
+        <div class="workflow-grid">
+          <section class="panel"><h3>Credit bureau consent</h3><p class="muted">Consent must be explicitly provided by the applicant.</p><label><input id="consent-checkbox" type="checkbox"> I consent to the simulated credit check.</label><div class="row"><button id="save-consent-btn" type="button">Save consent</button></div></section>
+          <section class="panel operator"><h3>Simulated Credit Bureau Evaluation</h3><p class="muted">PASS/FAIL records a simulated bureau result only. It does not approve or decline the loan.</p><div class="row"><button id="credit-pass-btn" class="success" type="button">Credit Check Pass</button><button id="credit-fail-btn" class="warning" type="button">Credit Check Failed</button></div></section>
+          <section class="panel"><h3>Final application</h3><p class="muted">Validation checks workflow completeness; it performs no underwriting.</p><div class="row"><span id="validate-action" class="workflow-action" data-tooltip="A failed simulated credit check prevents validation and submission of this application."><button id="validate-btn" class="secondary" type="button">Validate Application</button></span><span id="submit-action" class="workflow-action" data-tooltip="A failed simulated credit check prevents submission of this application."><button id="submit-btn" class="success" type="button">Submit Application</button></span></div><div id="receipt" class="panel" hidden></div></section>
+        </div>
+      </section>
+      <p id="notice" class="global-notice" aria-live="polite"></p>
     </section>
   </main>
+
+  <nav class="mobile-nav" aria-label="Mobile application navigation">
+    <button class="tab-button active" type="button" data-tab-target="chat-panel"><span class="nav-icon">◯</span>Chat</button>
+    <button class="tab-button" type="button" data-tab-target="documents-panel"><span class="nav-icon">▤</span>Documents</button>
+    <button class="tab-button" type="button" data-tab-target="application-panel"><span class="nav-icon">♙</span>Application</button>
+    <button class="tab-button review-tab" type="button"><span class="nav-icon">☑</span>Review</button>
+  </nav>
 
   <dialog id="review-dialog" aria-labelledby="review-title">
     <div class="review-header">
@@ -193,6 +301,21 @@
         <h3>Required documents</h3>
         <div id="review-documents" class="review-documents"></div>
       </section>
+    </div>
+  </dialog>
+
+  <dialog id="status-dialog" class="status-dialog" aria-labelledby="status-dialog-title">
+    <div class="review-header">
+      <div>
+        <h2 id="status-dialog-title">Application update</h2>
+        <p id="status-dialog-subtitle">Please review the details below.</p>
+      </div>
+      <button id="close-status-dialog-btn" class="dialog-close" type="button" aria-label="Close message">Close</button>
+    </div>
+    <div class="review-content">
+      <p id="status-dialog-message" class="status-message"></p>
+      <ul id="status-dialog-items" class="status-list"></ul>
+      <p id="status-dialog-note" class="credit-fail-note" hidden></p>
     </div>
   </dialog>
 

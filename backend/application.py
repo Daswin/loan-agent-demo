@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from .models import (
     ApplicationStatus,
+    CreditResult,
     DocumentRecord,
     DocumentStatus,
     DocumentType,
@@ -12,10 +13,29 @@ from .models import (
 from .repository import build_repository
 from .application_data import (
     create_profile_data,
+    field_label,
     get_path,
     refresh_completion,
     update_application_field as update_structured_field,
 )
+
+
+DOCUMENT_LABELS = {
+    DocumentType.JOB_LETTER: "Job Letter",
+    DocumentType.PAYSLIP_01: "Payslip",
+    DocumentType.SALARY_ASSIGNMENT_FORM: "Salary Deduction / Assignment Form",
+}
+
+
+class PackageValidationError(ValueError):
+    """Raised when a package is missing required submission information."""
+
+    def __init__(self, missing_items: list[str]):
+        self.missing_items = missing_items
+        super().__init__(
+            "The application is not complete. Please resolve the missing "
+            "items before continuing."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -364,19 +384,43 @@ def complete_validation(application_id: str) -> LoanApplication:
             "can be completed."
         )
 
-    if not all_required_documents_processed(application_id):
-        raise ValueError("All required documents must be processed.")
-
-    if not application.credit_bureau.consent:
-        raise ValueError("Credit bureau consent must be recorded.")
-
-    if application.credit_bureau.result is None:
-        raise ValueError("Credit bureau check must be completed.")
+    assert_package_complete(application)
 
     return set_application_status(
         application_id,
         ApplicationStatus.READY_FOR_SUBMISSION,
     )
+
+
+def package_validation_issues(application: LoanApplication) -> list[str]:
+    """Return customer-facing package requirements that remain incomplete."""
+    refresh_completion(application)
+    issues = [
+        field_label(path)
+        for path in application.completion.get("missing_fields", [])
+    ]
+    issues.extend(
+        f"{DOCUMENT_LABELS.get(document.document_type, document.document_type.value.replace('_', ' ').title())} "
+        "(upload and processing required)"
+        for document in application.documents
+        if document.status != DocumentStatus.PROCESSED
+    )
+    if not application.credit_bureau.consent:
+        issues.append("Credit bureau consent")
+    if application.credit_bureau.result is None:
+        issues.append("Simulated credit screening result")
+    elif application.credit_bureau.result == CreditResult.FAIL:
+        issues.append(
+            "Simulated credit screening must return PASS before submission"
+        )
+    return issues
+
+
+def assert_package_complete(application: LoanApplication) -> None:
+    """Prevent validation or submission of an incomplete package."""
+    issues = package_validation_issues(application)
+    if issues:
+        raise PackageValidationError(issues)
 
 
 def get_document_record(

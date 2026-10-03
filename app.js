@@ -124,14 +124,19 @@ async function api(path, options = {}) {
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
+    let details = null;
     try {
       const error = await response.json();
-      message = error.detail || message;
+      details = error.detail || null;
+      message = typeof details === "object" && details
+        ? details.message || message
+        : details || message;
     } catch (_) {
       // Preserve the status-based message for non-JSON errors.
     }
     const apiError = new Error(message);
     apiError.status = response.status;
+    apiError.details = details;
     throw apiError;
   }
 
@@ -141,7 +146,26 @@ async function api(path, options = {}) {
 function setNotice(message, kind = "") {
   const notice = byId("notice");
   notice.textContent = message;
-  notice.className = kind;
+  notice.className = `global-notice${kind ? ` ${kind}` : ""}`;
+}
+
+function activateWorkspaceTab(targetId) {
+  document.querySelectorAll(".tab-panel").forEach((panel) => {
+    panel.classList.toggle("active", panel.id === targetId);
+  });
+
+  document.querySelectorAll("[data-tab-target]").forEach((button) => {
+    const isActive = button.dataset.tabTarget === targetId;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  if (window.matchMedia("(max-width: 920px)").matches) {
+    document.querySelector(".assistant-shell")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 }
 
 function appendMessage(sender, text) {
@@ -311,6 +335,49 @@ function openApplicationReview() {
   byId("review-dialog").showModal();
 }
 
+function showStatusDialog({ title, subtitle, message, items = [], note = "" }) {
+  byId("status-dialog-title").textContent = title;
+  byId("status-dialog-subtitle").textContent = subtitle;
+  byId("status-dialog-message").textContent = message;
+  const list = byId("status-dialog-items");
+  list.replaceChildren();
+  items.forEach((item) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = item;
+    list.appendChild(listItem);
+  });
+  list.hidden = items.length === 0;
+  const noteElement = byId("status-dialog-note");
+  noteElement.textContent = note;
+  noteElement.hidden = !note;
+  byId("status-dialog").showModal();
+}
+
+function showIncompleteApplicationDialog(error) {
+  const missingItems = error.details?.missing_items || [];
+  showStatusDialog({
+    title: "Application needs attention",
+    subtitle: "Validation could not be completed.",
+    message: "Please complete the following items before validating and submitting the application:",
+    items: missingItems.length ? missingItems : [error.message],
+  });
+}
+
+function showCreditFailDialog() {
+  showStatusDialog({
+    title: "Credit screening result",
+    subtitle: "The simulated credit screening returned FAIL.",
+    message: "This screening result does not approve or decline your application. You may wish to discuss one of these alternatives with a loan officer:",
+    items: [
+      "Pay Advance",
+      "Credit Card",
+      "Fast Cash",
+      "A smaller personal loan",
+    ],
+    note: "Availability and eligibility for any alternative product would require a separate assessment by the bank.",
+  });
+}
+
 async function createApplication() {
   applicationState = await api("/api/applications", {
     method: "POST",
@@ -385,10 +452,13 @@ function renderApplication() {
     !applicationState.credit_bureau.consent || workflowComplete;
   byId("start-documents-btn").disabled =
     applicationState.status !== "IN_PROGRESS";
+  const creditCheckFailed = applicationState.credit_bureau.result === "FAIL";
   byId("validate-btn").disabled =
-    applicationState.status !== "VALIDATION_REQUIRED";
+    applicationState.status !== "VALIDATION_REQUIRED" || creditCheckFailed;
   byId("submit-btn").disabled =
-    applicationState.status !== "READY_FOR_SUBMISSION";
+    applicationState.status !== "READY_FOR_SUBMISSION" || creditCheckFailed;
+  byId("validate-action").classList.toggle("credit-blocked", creditCheckFailed);
+  byId("submit-action").classList.toggle("credit-blocked", creditCheckFailed);
   byId("auto-documents-btn").disabled = ![
     "IN_PROGRESS",
     "DOCUMENTS_REQUIRED",
@@ -670,6 +740,7 @@ async function recordCreditResult(result) {
     );
     renderApplication();
     setNotice(`Simulated credit result recorded: ${result}.`, "success");
+    if (result === "FAIL") showCreditFailDialog();
   } catch (error) {
     setNotice(error.message, "error");
   }
@@ -685,6 +756,7 @@ async function validatePackage() {
     setNotice("Package validation completed.", "success");
   } catch (error) {
     setNotice(error.message, "error");
+    if (error.details?.missing_items) showIncompleteApplicationDialog(error);
   }
 }
 
@@ -706,6 +778,7 @@ async function submitPackage() {
     setNotice("The bank simulator acknowledged receipt.", "success");
   } catch (error) {
     setNotice(error.message, "error");
+    if (error.details?.missing_items) showIncompleteApplicationDialog(error);
   }
 }
 
@@ -774,7 +847,14 @@ byId("submit-btn").addEventListener("click", submitPackage);
 byId("problem-btn").addEventListener("click", () => showQuickReplies(PROBLEM_OPTIONS));
 byId("review-application-btn").addEventListener("click", openApplicationReview);
 byId("close-review-btn").addEventListener("click", () => byId("review-dialog").close());
+byId("close-status-dialog-btn").addEventListener("click", () => byId("status-dialog").close());
 byId("reset-application-btn")?.addEventListener("click", resetApplication);
+document.querySelectorAll("[data-tab-target]").forEach((button) => {
+  button.addEventListener("click", () => activateWorkspaceTab(button.dataset.tabTarget));
+});
+document.querySelectorAll(".review-tab").forEach((button) => {
+  button.addEventListener("click", openApplicationReview);
+});
 window.setInterval(recordActivity, 60_000);
 
 refreshApplication()
