@@ -174,7 +174,7 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('id="tutorial-skip"', self.html)
         self.assertIn('id="tutorial-back"', self.html)
         self.assertIn('id="tutorial-next"', self.html)
-        self.assertGreaterEqual(self.html.count("tutorial-launch"), 2)
+        self.assertEqual(self.html.count("tutorial-launch"), 1)
         self.assertIn("TUTORIAL_STEPS", self.javascript)
         self.assertIn("startTutorial", self.javascript)
         self.assertIn("finishTutorial", self.javascript)
@@ -221,6 +221,19 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("between Loan Assistant and Tutorial", self.javascript)
         self.assertIn("grid-template-columns: repeat(4", self.html)
 
+    def test_progress_stages_fill_and_expose_accessible_tooltips(self):
+        self.assertIn("--stage-progress", self.html)
+        self.assertIn("linear-gradient(to top,#176dcc", self.html)
+        self.assertIn('dot.textContent = stage.complete ? "✓"', self.javascript)
+        self.assertIn('element.dataset.tooltip = accessibleText', self.javascript)
+        self.assertIn('element.setAttribute("aria-label", accessibleText)', self.javascript)
+        self.assertIn("element.tabIndex = 0", self.javascript)
+        self.assertIn("color: white; background: #176dcc", self.html)
+
+    def test_desktop_header_tutorial_link_is_removed(self):
+        self.assertNotIn('class="header-link tutorial-launch"', self.html)
+        self.assertIn('class="assistant-menu tutorial-launch"', self.html)
+
     def test_benefit_icons_are_centered_without_span_rule_override(self):
         self.assertIn(".benefit-icon { display: flex; align-items: center; justify-content: center", self.html)
         self.assertIn(".benefit > div strong, .benefit > div span", self.html)
@@ -253,6 +266,8 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("openDocumentPreview", self.javascript)
         self.assertIn("/preview-url", self.javascript)
         self.assertIn('preview.textContent = "View PDF"', self.javascript)
+        self.assertIn('id="close-document-preview-btn"', self.html)
+        self.assertIn(".preview-toolbar .dialog-close", self.html)
 
     def test_application_shell_avoids_mixed_cached_frontend_versions(self):
         self.assertNotIn('byId("reset-application-btn")', self.javascript)

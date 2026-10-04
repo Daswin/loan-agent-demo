@@ -122,14 +122,16 @@
     .assistant-workspace-wrap { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); }
     .assistant-shell { position: relative; width: 100%; height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
     .progress-rail { flex: 1; display: grid; grid-template-columns: repeat(4,minmax(44px,1fr)); gap: 0; max-width: 310px; margin: 0 4px; padding: 8px 10px 5px; border: 1px solid rgba(24,67,119,.1); border-radius: 16px; background: rgba(255,255,255,.52); }
-    .progress-stage { position: relative; display: grid; justify-items: center; gap: 3px; min-height: 39px; color: #7183a0; text-align: center; font-size: .5rem; line-height: 1.05; }
+    .progress-stage { --stage-progress: 0%; position: relative; display: grid; justify-items: center; gap: 3px; min-height: 39px; color: #7183a0; text-align: center; font-size: .5rem; line-height: 1.05; outline: none; }
     .progress-stage:not(:last-child)::after { content: ""; position: absolute; z-index: 0; top: 10px; right: -50%; left: 50%; height: 2px; background: #d7dee8; }
-    .stage-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid #c8d2e1; border-radius: 50%; background: #f8f9fb; color: #6c7f9c; font-size: .6rem; font-weight: 800; }
+    .stage-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid #176dcc; border-radius: 50%; background: linear-gradient(to top,#176dcc var(--stage-progress),#f8f9fb var(--stage-progress)); color: #092f68; font-size: .6rem; font-weight: 800; transition: background .3s ease,border-color .3s ease; }
     .progress-stage.complete { color: #174e91; }
-    .progress-stage.complete .stage-dot { border-color: #2874d4; color: white; background: #2874d4; }
-    .progress-stage.complete:not(:last-child)::after { background: #2874d4; }
+    .progress-stage.complete .stage-dot { border-color: #176dcc; color: white; background: #176dcc; }
+    .progress-stage.complete:not(:last-child)::after { background: #176dcc; }
     .progress-stage.current { color: #082e65; font-weight: 700; }
-    .progress-stage.current .stage-dot { border-color: #c99716; color: #6e4e00; background: #fff4ce; box-shadow: 0 0 0 5px rgba(212,175,55,.14); }
+    .progress-stage.current .stage-dot { box-shadow: 0 0 0 4px rgba(23,109,204,.14); }
+    .progress-stage::before { content: attr(data-tooltip); position: absolute; z-index: 30; top: calc(100% + 9px); left: 50%; width: max-content; max-width: 210px; padding: 7px 9px; border-radius: 8px; color: white; background: #081f46; font-size: .68rem; font-weight: 600; line-height: 1.3; text-align: center; box-shadow: 0 8px 22px rgba(7,28,58,.24); opacity: 0; pointer-events: none; transform: translate(-50%,-4px); transition: opacity .15s,transform .15s; }
+    .progress-stage:hover::before,.progress-stage:focus-visible::before { opacity: 1; transform: translate(-50%,0); }
     .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; }
     .assistant-identity { display: flex; align-items: center; gap: 12px; }
     .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 320% auto; background-position: 38% 22%; background-repeat: no-repeat; }
@@ -225,6 +227,8 @@
     .preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: white; border-bottom: 1px solid #dce5f0; }
     .preview-toolbar h2 { margin: 0; color: #082e65; font: 600 1.1rem 'Cinzel',serif; }
     .preview-actions { display: flex; gap: 8px; }
+    .preview-toolbar .dialog-close { border-color: #aac0dc; color: #123f79; background: #eef5ff; }
+    .preview-toolbar .dialog-close:hover:not(:disabled) { color: white; background: #176dcc; }
     #form-preview-frame,#document-preview-frame { width: 100%; height: calc(100% - 67px); border: 0; background: #eef1f5; }
     .qr-dialog { width: min(470px,calc(100% - 30px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 24px; color: #0a2d60; background: #fff; box-shadow: 0 30px 80px rgba(5,28,63,.25); }
     .qr-content { padding: 26px; text-align: center; }
@@ -289,7 +293,6 @@
     </div>
     <nav class="header-links" aria-label="Utility navigation">
       <a class="header-link" href="/" aria-label="Back to customer selection">← &nbsp; Back to customer selection</a>
-      <button class="header-link tutorial-launch" type="button">ⓘ &nbsp; Tutorial</button>
     </nav>
     <a class="mobile-back" href="/" aria-label="Back to customer selection">← <span>Customers</span></a>
   </header>

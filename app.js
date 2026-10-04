@@ -447,32 +447,52 @@ function renderProgressRail() {
   const stages = [
     {
       id: "stage-information",
-      complete: (completion.information_percent || 0) === 100,
+      label: "Information",
+      progress: completion.information_percent || 0,
     },
     {
       id: "stage-documents",
-      complete: (completion.documents_percent || 0) === 100,
+      label: "Documents",
+      progress: completion.documents_percent || 0,
     },
     {
       id: "stage-credit",
-      complete: Boolean(
-        applicationState.credit_bureau.consent
-        && applicationState.credit_bureau.result,
-      ),
+      label: "Credit check",
+      progress: applicationState.credit_bureau.result
+        ? 100
+        : (applicationState.credit_bureau.consent ? 50 : 0),
     },
     {
       id: "stage-submission",
-      complete: applicationState.status === "SUBMITTED",
+      label: "Submission",
+      progress: applicationState.status === "SUBMITTED"
+        ? 100
+        : (applicationState.status === "READY_FOR_SUBMISSION" ? 50 : 0),
     },
   ];
+  stages.forEach((stage) => {
+    stage.progress = Math.max(0, Math.min(100, Math.round(stage.progress)));
+    stage.complete = stage.progress === 100;
+  });
   const currentIndex = stages.findIndex((stage) => !stage.complete);
   stages.forEach((stage, index) => {
     const element = byId(stage.id);
     element.classList.toggle("complete", stage.complete);
     element.classList.toggle("current", index === currentIndex);
     element.classList.toggle("pending", !stage.complete && index !== currentIndex);
+    element.style.setProperty("--stage-progress", `${stage.progress}%`);
+    let accessibleText = stage.complete
+      ? `${stage.label}: complete`
+      : `${stage.label}: ${stage.progress}% complete`;
+    if (stage.id === "stage-credit" && applicationState.credit_bureau.result) {
+      accessibleText = `Credit check: complete (${applicationState.credit_bureau.result} recorded)`;
+    }
+    element.dataset.tooltip = accessibleText;
+    element.setAttribute("aria-label", accessibleText);
+    element.tabIndex = 0;
     const dot = element.querySelector(".stage-dot");
     dot.textContent = stage.complete ? "✓" : String(index + 1);
+    dot.setAttribute("aria-hidden", "true");
   });
 }
 
