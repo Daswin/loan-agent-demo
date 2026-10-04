@@ -177,7 +177,7 @@ function appendMessage(sender, text) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function startFreshConversation(automatic = false) {
+function startFreshConversation() {
   byId("chat-window").replaceChildren();
   showQuickReplies();
   const receipt = byId("receipt");
@@ -189,12 +189,6 @@ function startFreshConversation(automatic = false) {
   const firstName = applicationState.personal.first_name;
   const completion = applicationState.completion || {};
   const nextQuestion = completion.next_missing_field_question;
-  if (automatic) {
-    appendMessage(
-      "agent",
-      "This demo application was reset after five minutes of inactivity. Your original customer information is ready, and we can begin again.",
-    );
-  }
   let greeting;
   let greetingReplies = [];
   if (!firstName) {
@@ -455,7 +449,6 @@ function renderApplication() {
     applicationState.personal.last_name,
   ].filter(Boolean).join(" ");
   byId("customer-name").textContent = applicantName || "New applicant";
-  byId("application-status").textContent = applicationState.status;
   renderProgressRail();
   byId("consent-checkbox").checked = applicationState.credit_bureau.consent;
   const workflowComplete = ["SUBMITTED", "SUBMISSION_FAILED"].includes(

@@ -146,7 +146,16 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("/activity", self.javascript)
         self.assertIn("240_000", self.javascript)
         self.assertIn("300_000", self.javascript)
-        self.assertIn("five minutes of inactivity", self.javascript)
+        self.assertIn("five minutes without activity", self.javascript)
+        self.assertNotIn("This demo application was reset after five minutes", self.javascript)
+        self.assertNotIn('id="application-status"', self.html)
+
+    def test_header_and_benefits_use_visible_navigation_and_icons(self):
+        self.assertIn("Back to customer selection", self.html)
+        self.assertNotIn("Save &amp; Exit", self.html)
+        self.assertIn(".brand-name { color: #082e65", self.html)
+        self.assertEqual(self.html.count('class="benefit-icon"'), 3)
+        self.assertGreaterEqual(self.html.count("<svg"), 3)
 
     def test_chat_uses_external_stage_progress_instead_of_completion_bar(self):
         self.assertNotIn('id="completion-track"', self.html)

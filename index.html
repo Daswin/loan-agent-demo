@@ -100,7 +100,7 @@
     .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border-radius: 9px 3px 9px 3px; background: linear-gradient(135deg,#36a6f2,#0a3d91 68%); }
     .brand-mark::before { width: 30px; height: 11px; top: 1px; right: 0; }
     .brand-mark::after { width: 25px; height: 11px; bottom: 1px; left: 0; }
-    .brand-name { font-size: 1.33rem; font-weight: 700; letter-spacing: -.03em; }
+    .brand-name { color: #082e65; font-size: 1.33rem; font-weight: 700; letter-spacing: -.03em; }
     .brand-divider { width: 1px; height: 28px; background: #d4dae4; }
     .brand-context { color: #17355f; font-size: .94rem; }
     .header-link { display: inline-flex; align-items: center; gap: 7px; color: #17355f; text-decoration: none; font-size: .9rem; }
@@ -112,7 +112,8 @@
     .hero-copy > p { max-width: 350px; color: #526d96; font-size: 1.02rem; line-height: 1.55; }
     .benefits { display: grid; gap: 15px; margin-top: 34px; }
     .benefit { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; }
-    .benefit-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.88); box-shadow: 0 7px 18px rgba(27,59,102,.1); font-size: 1.2rem; }
+    .benefit-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.9); box-shadow: 0 7px 18px rgba(27,59,102,.1); }
+    .benefit-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .benefit strong, .benefit span { display: block; }
     .benefit strong { font-size: .92rem; }
     .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
@@ -128,7 +129,7 @@
     .progress-stage.current .stage-dot { border-color: #c99716; color: #6e4e00; background: #fff4ce; box-shadow: 0 0 0 5px rgba(212,175,55,.14); }
     .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px 12px; }
     .assistant-identity { display: flex; align-items: center; gap: 12px; }
-    .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 250px auto; background-position: 57% 21%; }
+    .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 320% auto; background-position: 38% 22%; background-repeat: no-repeat; }
     .assistant-avatar { width: 48px; height: 48px; flex: 0 0 auto; border: 2px solid white; border-radius: 50%; box-shadow: 0 4px 13px rgba(15,43,78,.18); }
     .assistant-title strong { display: block; font-size: .94rem; }
     .assistant-title span { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: #5e7190; font-size: .76rem; }
@@ -154,16 +155,24 @@
     .composer #send-btn { width: 43px; height: 43px; padding: 0; border-radius: 50%; font-size: 0; }
     .composer #send-btn::after { content: "➤"; font-size: 1.05rem; }
     .conversation-actions { margin-top: 7px; }
-    .panel-title { margin: 4px 0 5px; color: #092351; font: 600 1.55rem 'Cinzel',serif; }
-    .panel-intro { margin: 0 0 14px; color: #667c9e; font-size: .85rem; line-height: 1.45; }
+    .panel-title { margin: 2px 0 3px; color: #092351; font: 600 1.25rem 'Cinzel',serif; }
+    .panel-intro { margin: 0 0 9px; color: #667c9e; font-size: .76rem; line-height: 1.4; }
     .documents-card,.workflow-card { position: static; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-    #document-list { display: grid; gap: 10px; }
-    .document { padding: 15px; border: 1px solid rgba(19,57,102,.08); border-radius: 16px; background: rgba(255,255,255,.86); box-shadow: 0 7px 22px rgba(30,59,94,.07); }
+    #document-list { display: grid; gap: 7px; }
+    .document { padding: 10px 12px; border: 1px solid rgba(19,57,102,.08); border-radius: 13px; background: rgba(255,255,255,.86); box-shadow: 0 5px 16px rgba(30,59,94,.06); }
     .document:first-child { border-top: 1px solid rgba(19,57,102,.08); }
     .document-controls { align-items: center; }
     .document input { max-width: 100%; }
-    .workflow-grid { display: grid; grid-template-columns: 1fr; gap: 11px; }
-    .workflow-grid .panel { margin: 0; padding: 14px; border: 1px solid rgba(19,57,102,.09); border-radius: 14px; background: rgba(255,255,255,.8); }
+    .documents-card .row { margin-top: 7px; }
+    .documents-card button,.workflow-card button { padding: 8px 10px; font-size: .75rem; }
+    .document-head { margin-bottom: 5px; font-size: .82rem; }
+    .document-feedback { margin-top: 5px; font-size: .72rem; }
+    .workflow-grid { display: grid; grid-template-columns: 1fr; gap: 7px; }
+    .workflow-grid .panel { margin: 0; padding: 10px 12px; border: 1px solid rgba(19,57,102,.09); border-radius: 12px; background: rgba(255,255,255,.8); }
+    .workflow-grid h3 { margin: 0 0 3px; font-size: .92rem; }
+    .workflow-grid .muted { margin: 0 0 6px; font-size: .75rem; line-height: 1.35; }
+    .workflow-grid label { font-size: .77rem; }
+    .workflow-grid .row { margin-top: 7px; }
     .operator { background: rgba(247,241,220,.88) !important; }
     .global-notice { min-height: 0; margin: 0 20px 8px; padding: 0; font-size: .8rem; }
     .mobile-nav { display: none; }
@@ -241,7 +250,7 @@
       <span class="brand-context">Loan Application</span>
     </div>
     <nav class="header-links" aria-label="Utility navigation">
-      <a class="header-link" href="/">▣ &nbsp; Save &amp; Exit</a>
+      <a class="header-link" href="/" aria-label="Back to customer selection">← &nbsp; Back to customer selection</a>
       <a class="header-link" href="#assistant-workspace">ⓘ &nbsp; Help</a>
     </nav>
     <span class="mobile-menu" aria-hidden="true">☰</span>
@@ -253,9 +262,9 @@
       <h1 id="hero-heading">Let’s make<br>your next step<br>happen.</h1>
       <p>Our loan application assistant will guide you, answer your questions, and help you gather everything you need — one step at a time.</p>
       <div class="benefits" aria-label="Service benefits">
-        <div class="benefit"><span class="benefit-icon">♢</span><div><strong>Secure</strong><span>Your information is protected</span></div></div>
-        <div class="benefit"><span class="benefit-icon">ϟ</span><div><strong>Guided</strong><span>We'll help you every step of the way</span></div></div>
-        <div class="benefit"><span class="benefit-icon">⇧</span><div><strong>Simple</strong><span>Upload documents easily</span></div></div>
+        <div class="benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.4c0 4.5 3.1 7.8 7.5 9.6 4.4-1.8 7.5-5.1 7.5-9.6V6L12 3Z"/></svg></span><div><strong>Secure</strong><span>Your information is protected</span></div></div>
+        <div class="benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m13.5 2-7 11h5l-1 9 7-12h-5l1-8Z"/></svg></span><div><strong>Guided</strong><span>We'll help you every step of the way</span></div></div>
+        <div class="benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="m8 6 1.5-2h5L16 6M8.5 13a3.5 3.5 0 1 0 7 0 3.5 3.5 0 0 0-7 0Z"/></svg></span><div><strong>Simple</strong><span>Upload documents easily</span></div></div>
       </div>
     </section>
 
@@ -278,7 +287,7 @@
       </nav>
 
       <section id="chat-panel" class="tab-panel active">
-        <div class="chat-context"><strong id="customer-name">New applicant</strong><span id="application-status">INITIALIZING</span><span id="application-id" hidden>Starting…</span></div>
+        <div class="chat-context"><strong id="customer-name">New applicant</strong><span id="application-id" hidden>Starting…</span></div>
         <h2 class="conversation-heading">Application conversation</h2>
         <div id="chat-window" aria-live="polite"></div>
         <div class="row composer"><input id="msg-input" type="text" placeholder="Type your message…" autocomplete="off"><button id="send-btn" type="button">Send</button></div>
