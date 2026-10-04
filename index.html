@@ -103,7 +103,8 @@
     .brand-name { color: #082e65; font-size: 1.33rem; font-weight: 700; letter-spacing: -.03em; }
     .brand-divider { width: 1px; height: 28px; background: #d4dae4; }
     .brand-context { color: #17355f; font-size: .94rem; }
-    .header-link { display: inline-flex; align-items: center; gap: 7px; color: #17355f; text-decoration: none; font-size: .9rem; }
+    .header-link { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; color: #17355f; background: transparent; text-decoration: none; font: 500 .9rem 'DM Sans',sans-serif; }
+    .header-link:hover:not(:disabled) { color: #0c55b8; background: transparent; transform: none; }
     .experience { position: relative; min-height: 100vh; max-width: none; margin: 0; padding: 108px clamp(24px,4.5vw,74px) 44px; display: grid; grid-template-columns: minmax(340px,.82fr) minmax(480px,1.05fr); align-items: center; gap: clamp(34px,6vw,104px); overflow: hidden; background-image: linear-gradient(90deg,rgba(255,255,255,.97) 0%,rgba(255,255,255,.86) 26%,rgba(255,255,255,.08) 62%),url('/application/assets/loan-assistant-hero.png'); background-size: cover; background-position: center; }
     .hero-copy { position: relative; z-index: 2; max-width: 410px; align-self: center; padding: 20px 0; }
     .eyebrow { display: flex; align-items: center; gap: 14px; color: #41628f; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
@@ -112,8 +113,8 @@
     .hero-copy > p { max-width: 350px; color: #526d96; font-size: 1.02rem; line-height: 1.55; }
     .benefits { display: grid; gap: 15px; margin-top: 34px; }
     .benefit { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; }
-    .benefit-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.9); box-shadow: 0 7px 18px rgba(27,59,102,.1); }
-    .benefit-icon svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .benefit-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.9); box-shadow: 0 7px 18px rgba(27,59,102,.1); }
+    .benefit-icon svg { display: block; width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .benefit strong, .benefit span { display: block; }
     .benefit strong { font-size: .92rem; }
     .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
@@ -134,7 +135,8 @@
     .assistant-title strong { display: block; font-size: .94rem; }
     .assistant-title span { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: #5e7190; font-size: .76rem; }
     .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #51c675; }
-    .assistant-menu { color: #17355f; letter-spacing: .18em; }
+    .assistant-menu { padding: 7px 10px; border: 0; color: #17355f; background: rgba(255,255,255,.58); font-size: .72rem; }
+    .assistant-menu:hover:not(:disabled) { color: #0c55b8; background: white; transform: none; }
     .workspace-tabs { display: flex; gap: 5px; padding: 0 18px 12px; border-bottom: 1px solid rgba(18,56,102,.1); }
     .tab-button { flex: 1; padding: 9px 7px; border: 0; border-radius: 9px; color: #5c7192; background: transparent; font-size: .76rem; }
     .tab-button:hover:not(:disabled) { transform: none; background: rgba(255,255,255,.55); }
@@ -157,7 +159,7 @@
     .conversation-actions { margin-top: 7px; }
     .panel-title { margin: 2px 0 3px; color: #092351; font: 600 1.25rem 'Cinzel',serif; }
     .panel-intro { margin: 0 0 9px; color: #667c9e; font-size: .76rem; line-height: 1.4; }
-    .documents-card,.workflow-card { position: static; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .documents-card,.workflow-card { position: static; width: min(100%,500px); margin-inline: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
     #document-list { display: grid; gap: 7px; }
     .document { padding: 10px 12px; border: 1px solid rgba(19,57,102,.08); border-radius: 13px; background: rgba(255,255,255,.86); box-shadow: 0 5px 16px rgba(30,59,94,.06); }
     .document:first-child { border-top: 1px solid rgba(19,57,102,.08); }
@@ -182,7 +184,7 @@
     #review-dialog { width: min(840px,calc(100% - 36px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 26px; background: rgba(250,249,247,.94); box-shadow: 0 30px 90px rgba(5,28,63,.24); backdrop-filter: blur(28px); }
     #review-dialog::backdrop { background: rgba(11,31,58,.42); backdrop-filter: blur(7px); }
     #review-dialog .review-header { padding: 25px 28px 20px; color: #08285a; background: linear-gradient(135deg,rgba(255,255,255,.96),rgba(236,243,252,.9)); border-bottom: 1px solid rgba(16,64,123,.1); }
-    #review-dialog .review-header h2 { margin: 0 0 5px; font: 600 1.7rem 'Cinzel',serif; }
+    #review-dialog .review-header h2 { margin: 0 0 5px; color: #08285a; font: 600 1.7rem 'Cinzel',serif; }
     #review-dialog .review-header p { color: #637895; }
     #review-dialog .dialog-close { border: 1px solid #b8c9df; border-radius: 999px; color: #174b8c; background: rgba(255,255,255,.85); }
     #review-dialog .review-content { padding: 24px 28px 30px; background: linear-gradient(180deg,rgba(248,250,253,.72),rgba(255,252,246,.88)); }
@@ -202,6 +204,17 @@
     .inactivity-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
     .inactivity-actions button { min-width: 130px; }
     .mobile-back { display: none; }
+    .tutorial-overlay { position: fixed; z-index: 60; inset: 0; background: transparent; }
+    .tutorial-overlay[hidden] { display: none; }
+    .tutorial-highlight { position: fixed; z-index: 61; border: 3px solid #3b86e8; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(5,24,51,.64),0 10px 30px rgba(0,0,0,.25); pointer-events: none; transition: inset .2s,width .2s,height .2s; }
+    .tutorial-card { position: fixed; z-index: 63; width: min(360px,calc(100vw - 28px)); padding: 20px; border: 1px solid rgba(255,255,255,.86); border-radius: 19px; color: #0a2d60; background: rgba(253,251,247,.98); box-shadow: 0 24px 70px rgba(2,19,43,.32); }
+    .tutorial-step { margin: 0 0 7px; color: #6a7d99; font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+    .tutorial-card h2 { margin: 0 0 8px; color: #082e65; font: 600 1.25rem 'Cinzel',serif; }
+    .tutorial-card p { margin: 0; color: #536b8d; font-size: .86rem; line-height: 1.5; }
+    .tutorial-actions { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+    .tutorial-actions button { padding: 8px 12px; font-size: .76rem; }
+    .tutorial-skip { margin-right: auto; border-color: transparent; color: #5f7190; background: transparent; }
+    .tutorial-back { border-color: #b8c8dc; color: #234a7c; background: white; }
 
     @media (max-width: 920px) {
       .site-header { position: absolute; height: 72px; padding: 0 22px; background: transparent; }
@@ -213,6 +226,7 @@
       .hero-copy h1 { width: 72%; margin: 0 0 15px; font-size: clamp(2.2rem,10vw,3.15rem); }
       .hero-copy > p { width: 67%; margin: 0; font-size: .86rem; }
       .assistant-shell { width: 100%; height: auto; min-height: 590px; overflow: visible; border: 0; border-radius: 24px 24px 0 0; background: rgba(249,246,240,.88); box-shadow: 0 -8px 30px rgba(35,42,52,.08); backdrop-filter: blur(18px); }
+      .documents-card,.workflow-card { width: 100%; }
       .progress-rail { position: static; width: auto; transform: none; grid-template-columns: repeat(4,1fr); gap: 0; margin: 0 15px 4px; padding: 9px 6px 6px; border-radius: 15px; box-shadow: none; }
       .progress-stage { min-height: 48px; font-size: .55rem; }
       .progress-stage:not(:last-child)::after { top: 12px; right: -50%; bottom: auto; left: 50%; width: 100%; height: 2px; transform: none; }
@@ -255,7 +269,7 @@
     </div>
     <nav class="header-links" aria-label="Utility navigation">
       <a class="header-link" href="/" aria-label="Back to customer selection">← &nbsp; Back to customer selection</a>
-      <a class="header-link" href="#assistant-workspace">ⓘ &nbsp; Help</a>
+      <button class="header-link tutorial-launch" type="button">ⓘ &nbsp; Tutorial</button>
     </nav>
     <a class="mobile-back" href="/" aria-label="Back to customer selection">← <span>Customers</span></a>
   </header>
@@ -281,7 +295,7 @@
       </aside>
       <div class="assistant-header">
         <div class="assistant-identity"><span class="assistant-avatar" aria-hidden="true"></span><div class="assistant-title"><strong>Loan Assistant</strong><span><i class="online-dot"></i> Online</span></div></div>
-        <span class="assistant-menu" aria-hidden="true">••• &nbsp;—</span>
+        <button class="assistant-menu tutorial-launch" type="button" aria-label="Open page tutorial">Tutorial</button>
       </div>
       <nav class="workspace-tabs" aria-label="Application sections">
         <button class="tab-button active" type="button" data-tab-target="chat-panel">Chat</button>
@@ -365,6 +379,20 @@
       <div class="inactivity-actions"><button id="inactivity-action-btn" type="button">Continue</button></div>
     </div>
   </dialog>
+
+  <div id="tutorial-overlay" class="tutorial-overlay" hidden>
+    <div id="tutorial-highlight" class="tutorial-highlight" aria-hidden="true"></div>
+    <section id="tutorial-card" class="tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+      <p id="tutorial-step" class="tutorial-step"></p>
+      <h2 id="tutorial-title">Page tutorial</h2>
+      <p id="tutorial-description"></p>
+      <div class="tutorial-actions">
+        <button id="tutorial-skip" class="tutorial-skip" type="button">Skip tutorial</button>
+        <button id="tutorial-back" class="tutorial-back" type="button">Back</button>
+        <button id="tutorial-next" type="button">Next</button>
+      </div>
+    </section>
+  </div>
 
   <script src="/application/config.js"></script>
   <script src="/application/app.js"></script>

@@ -1,5 +1,6 @@
 const API_BASE = window.LOAN_API_BASE || window.location.origin;
 const SESSION_KEY = "loan-agent-session-id";
+const TUTORIAL_KEY = "loan-agent-tutorial-complete:v1";
 let sessionId = localStorage.getItem(SESSION_KEY) || crypto.randomUUID();
 
 const CUSTOMER_PROFILES = {
@@ -165,6 +166,105 @@ function activateWorkspaceTab(targetId) {
       behavior: "smooth",
       block: "start",
     });
+  }
+}
+
+const TUTORIAL_STEPS = [
+  { selector: '.header-link[href="/"], .mobile-back', title: "Customer selection", description: "Use this option to return to the customer list without using the browser back button." },
+  { selector: ".progress-rail", title: "Application progress", description: "This guide tracks information, documents, the simulated credit check, and submission without crowding the conversation." },
+  { selector: '[data-tab-target="chat-panel"]', tab: "chat-panel", title: "Chat", description: "The assistant collects one missing detail at a time and can answer questions while you complete the application." },
+  { selector: "#chat-window", tab: "chat-panel", title: "Conversation", description: "Application questions and your answers appear here. Suggested responses are shown only for categorical questions." },
+  { selector: ".composer", tab: "chat-panel", title: "Your response", description: "Type an answer or question here, then use the blue send button." },
+  { selector: "#problem-btn", tab: "chat-panel", title: "Need help?", description: "Choose this when documentation, employer, upload, or consent issues are getting in the way." },
+  { selector: '[data-tab-target="documents-panel"]', tab: "documents-panel", title: "Documents", description: "Open this tab to upload the three required documents. Uploads are available immediately." },
+  { selector: "#document-list", tab: "documents-panel", title: "Required documents", description: "Choose a PDF or image for each slot. Uploaded files are processed through the prototype document workflow." },
+  { selector: ".camera-option", tab: "documents-panel", mobileOnly: true, title: "Photograph a document", description: "On a phone, this opens the rear camera so you can photograph and upload a document directly." },
+  { selector: "#auto-documents-btn", tab: "documents-panel", title: "Demo shortcut", description: "For stakeholder testing, this creates and uploads sample documents. Manual upload remains available." },
+  { selector: '[data-tab-target="application-panel"]', tab: "application-panel", title: "Application controls", description: "This tab contains consent, simulated credit evaluation, validation, and submission." },
+  { selector: "#consent-checkbox", tab: "application-panel", title: "Credit consent", description: "The applicant must explicitly provide consent before the simulated credit check can run." },
+  { selector: "#credit-pass-btn", tab: "application-panel", title: "Simulated credit result", description: "The operator records PASS or FAIL here. This is not underwriting and does not approve or decline the loan." },
+  { selector: "#validate-btn", tab: "application-panel", title: "Validate", description: "Validation checks that required information, documents, consent, and workflow steps are complete." },
+  { selector: "#submit-btn", tab: "application-panel", title: "Submit", description: "Submission sends the completed package to the simulated bank, which acknowledges receipt only." },
+  { selector: ".review-tab", title: "Review", description: "Open Review at any time to see all recorded application information and document statuses." },
+];
+
+let tutorialIndex = 0;
+let tutorialTarget = null;
+
+function visibleTutorialTarget(selector) {
+  return [...document.querySelectorAll(selector)].find((element) => {
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length;
+  }) || null;
+}
+
+function positionTutorial() {
+  if (!tutorialTarget) return;
+  const rect = tutorialTarget.getBoundingClientRect();
+  const padding = 7;
+  const highlight = byId("tutorial-highlight");
+  highlight.style.left = `${Math.max(5, rect.left - padding)}px`;
+  highlight.style.top = `${Math.max(5, rect.top - padding)}px`;
+  highlight.style.width = `${Math.min(window.innerWidth - 10, rect.width + padding * 2)}px`;
+  highlight.style.height = `${Math.min(window.innerHeight - 10, rect.height + padding * 2)}px`;
+
+  const card = byId("tutorial-card");
+  const cardWidth = Math.min(360, window.innerWidth - 28);
+  const left = Math.min(
+    window.innerWidth - cardWidth - 14,
+    Math.max(14, rect.left + rect.width / 2 - cardWidth / 2),
+  );
+  card.style.left = `${left}px`;
+  card.style.width = `${cardWidth}px`;
+  const cardHeight = card.offsetHeight || 230;
+  const below = rect.bottom + 18;
+  card.style.top = `${below + cardHeight <= window.innerHeight - 12
+    ? below
+    : Math.max(12, rect.top - cardHeight - 18)}px`;
+}
+
+function showTutorialStep(direction = 1) {
+  while (tutorialIndex >= 0 && tutorialIndex < TUTORIAL_STEPS.length) {
+    const step = TUTORIAL_STEPS[tutorialIndex];
+    if (step.mobileOnly && !window.matchMedia("(max-width: 920px)").matches) {
+      tutorialIndex += direction;
+      continue;
+    }
+    if (step.tab) activateWorkspaceTab(step.tab);
+    tutorialTarget = visibleTutorialTarget(step.selector);
+    if (!tutorialTarget) {
+      tutorialIndex += direction;
+      continue;
+    }
+    tutorialTarget.scrollIntoView({ behavior: "smooth", block: "center" });
+    byId("tutorial-step").textContent = `Step ${tutorialIndex + 1} of ${TUTORIAL_STEPS.length}`;
+    byId("tutorial-title").textContent = step.title;
+    byId("tutorial-description").textContent = step.description;
+    byId("tutorial-back").disabled = tutorialIndex === 0;
+    byId("tutorial-next").textContent = tutorialIndex === TUTORIAL_STEPS.length - 1
+      ? "Finish"
+      : "Next";
+    window.setTimeout(positionTutorial, 260);
+    return;
+  }
+  finishTutorial();
+}
+
+function startTutorial() {
+  tutorialIndex = 0;
+  byId("tutorial-overlay").hidden = false;
+  showTutorialStep();
+}
+
+function finishTutorial() {
+  byId("tutorial-overlay").hidden = true;
+  tutorialTarget = null;
+  localStorage.setItem(TUTORIAL_KEY, "true");
+}
+
+function maybeStartTutorial() {
+  if (!localStorage.getItem(TUTORIAL_KEY) && byId("tutorial-overlay").hidden) {
+    startTutorial();
   }
 }
 
@@ -766,7 +866,15 @@ async function recordCreditResult(result) {
     );
     renderApplication();
     setNotice(`Simulated credit result recorded: ${result}.`, "success");
-    if (result === "FAIL") showCreditFailDialog();
+    if (result === "FAIL") {
+      showCreditFailDialog();
+    } else {
+      showStatusDialog({
+        title: "Credit screening recorded",
+        subtitle: "The simulated credit check returned PASS.",
+        message: "The screening result has been recorded. This does not approve the loan or constitute an underwriting decision.",
+      });
+    }
   } catch (error) {
     setNotice(error.message, "error");
   }
@@ -780,6 +888,11 @@ async function validatePackage() {
     );
     renderApplication();
     setNotice("Package validation completed.", "success");
+    showStatusDialog({
+      title: "Application validated",
+      subtitle: "The required workflow checks are complete.",
+      message: "The application package is ready for submission. Validation confirms completeness only and is not a loan approval or underwriting decision.",
+    });
   } catch (error) {
     setNotice(error.message, "error");
     if (error.details?.missing_items) showIncompleteApplicationDialog(error);
@@ -802,6 +915,11 @@ async function submitPackage() {
     receiptPanel.hidden = false;
     await refreshApplication();
     setNotice("The bank simulator acknowledged receipt.", "success");
+    showStatusDialog({
+      title: "Application submitted",
+      subtitle: "The bank simulator acknowledged receipt.",
+      message: `Status: ${receipt.status}. Reference: ${receipt.reference}. This confirms receipt only and is not a loan approval.`,
+    });
   } catch (error) {
     setNotice(error.message, "error");
     if (error.details?.missing_items) showIncompleteApplicationDialog(error);
@@ -920,8 +1038,34 @@ document.querySelectorAll("[data-tab-target]").forEach((button) => {
 document.querySelectorAll(".review-tab").forEach((button) => {
   button.addEventListener("click", openApplicationReview);
 });
+document.querySelectorAll(".tutorial-launch").forEach((button) => {
+  button.addEventListener("click", startTutorial);
+});
+byId("tutorial-next").addEventListener("click", () => {
+  if (tutorialIndex === TUTORIAL_STEPS.length - 1) {
+    finishTutorial();
+    return;
+  }
+  tutorialIndex += 1;
+  showTutorialStep(1);
+});
+byId("tutorial-back").addEventListener("click", () => {
+  tutorialIndex -= 1;
+  showTutorialStep(-1);
+});
+byId("tutorial-skip").addEventListener("click", finishTutorial);
+byId("inactivity-dialog").addEventListener("close", () => {
+  window.setTimeout(maybeStartTutorial, 180);
+});
+window.addEventListener("resize", positionTutorial);
+document.addEventListener("scroll", positionTutorial, true);
 document.addEventListener("pointerdown", () => noteCustomerActivity(true), { passive: true });
-document.addEventListener("keydown", () => noteCustomerActivity(true));
+document.addEventListener("keydown", (event) => {
+  noteCustomerActivity(true);
+  if (event.key === "Escape" && !byId("tutorial-overlay").hidden) {
+    finishTutorial();
+  }
+});
 
 refreshApplication()
   .then(() => {

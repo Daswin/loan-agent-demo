@@ -1,4 +1,5 @@
 from html import escape
+from math import isfinite
 
 from .application_data import get_path
 from .models import LoanApplication
@@ -25,6 +26,29 @@ def salary_assignment_filename(application: LoanApplication) -> str:
     return f"salary_assignment_form_{safe_name}.html"
 
 
+def _monthly_payment(principal, term_months, annual_rate: float = 0.20) -> float | None:
+    """Return the standard amortized monthly payment for the prototype loan."""
+    try:
+        amount = float(principal)
+        term = int(term_months)
+    except (TypeError, ValueError):
+        return None
+    if amount <= 0 or term <= 0 or not isfinite(amount):
+        return None
+    monthly_rate = annual_rate / 12
+    return amount * monthly_rate / (1 - (1 + monthly_rate) ** -term)
+
+
+def _currency(value, fallback: str = "To be completed") -> str:
+    try:
+        amount = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    if not isfinite(amount):
+        return fallback
+    return f"J${amount:,.2f}"
+
+
 def generate_salary_assignment_form(application: LoanApplication) -> str:
     data = application.application_data
     first_name = get_path(data, "applicant.identity.first_name", "")
@@ -46,7 +70,9 @@ def generate_salary_assignment_form(application: LoanApplication) -> str:
 
     employer = get_path(data, "applicant.employment.employer_name", "")
     requested_amount = get_path(data, "loan_request.requested_amount", "")
-    bank = get_path(data, "applicant.banking.primary_bank", "Meridian Private Bank")
+    requested_term = get_path(data, "loan_request.requested_term_months", "")
+    bank = get_path(data, "applicant.banking.primary_bank", "")
+    monthly_payment = _monthly_payment(requested_amount, requested_term)
 
     return f"""<!doctype html>
 <html lang="en">
@@ -88,15 +114,18 @@ def generate_salary_assignment_form(application: LoanApplication) -> str:
       <div class="field"><span>Employee name</span><strong>{_text(employee_name)}</strong></div>
       <div class="field"><span>Employer</span><strong>{_text(employer, "To be completed")}</strong></div>
       <div class="field"><span>Employee number</span><strong>&nbsp;</strong></div>
-      <div class="field"><span>Requested loan amount</span><strong>{_text(requested_amount)}</strong></div>
-      <div class="field"><span>Financial institution</span><strong>{_text(bank)}</strong></div>
-      <div class="field"><span>Payroll frequency</span><strong>&nbsp;</strong></div>
+      <div class="field"><span>Requested loan amount</span><strong>{_text(_currency(requested_amount))}</strong></div>
+      <div class="field"><span>Financial institution</span><strong>{_text(bank, "To be completed")}</strong></div>
+      <div class="field"><span>Payroll frequency</span><strong>Monthly</strong></div>
+      <div class="field"><span>Monthly deduction amount</span><strong>{_text(_currency(monthly_payment))}</strong></div>
+      <div class="field"><span>Annual interest rate</span><strong>20%</strong></div>
+      <div class="field"><span>Loan term</span><strong>{_text(f"{requested_term} months" if requested_term else "To be completed")}</strong></div>
     </div>
 
     <section class="authorization">
       <p>I, <strong>{_text(employee_name)}</strong>, authorize my employer to deduct
-      <span class="blank">&nbsp;</span> from my salary each pay period and remit that amount
-      to <strong>{_text(bank)}</strong> toward my loan obligation.</p>
+      <strong>{_text(_currency(monthly_payment))}</strong> from my salary each month and remit that amount
+      to <strong>{_text(bank, "the named financial institution")}</strong> toward my loan obligation.</p>
       <p>This authorization will remain in effect until the obligation has been satisfied
       or written instructions to amend or end it have been accepted by the employer and
       financial institution, subject to the applicable agreement.</p>

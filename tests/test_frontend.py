@@ -132,6 +132,16 @@ class FrontendContractTests(unittest.TestCase):
             self.assertIn(product, self.javascript)
         self.assertIn("does not approve or decline", self.javascript)
 
+    def test_successful_workflow_actions_show_confirmation_modals(self):
+        for title in (
+            "Credit screening recorded",
+            "Application validated",
+            "Application submitted",
+        ):
+            self.assertIn(title, self.javascript)
+        self.assertIn("This does not approve the loan", self.javascript)
+        self.assertIn("not a loan approval", self.javascript)
+
     def test_demo_document_button_preserves_manual_upload_workflow(self):
         self.assertIn('id="auto-documents-btn"', self.html)
         self.assertIn("/demo-documents", self.javascript)
@@ -152,6 +162,23 @@ class FrontendContractTests(unittest.TestCase):
     def test_mobile_header_has_customer_selection_back_link(self):
         self.assertIn('class="mobile-back" href="/"', self.html)
         self.assertIn("Back to customer selection", self.html)
+
+    def test_guided_tutorial_can_be_skipped_and_restarted(self):
+        self.assertIn('id="tutorial-overlay"', self.html)
+        self.assertIn('id="tutorial-skip"', self.html)
+        self.assertIn('id="tutorial-back"', self.html)
+        self.assertIn('id="tutorial-next"', self.html)
+        self.assertGreaterEqual(self.html.count("tutorial-launch"), 2)
+        self.assertIn("TUTORIAL_STEPS", self.javascript)
+        self.assertIn("startTutorial", self.javascript)
+        self.assertIn("finishTutorial", self.javascript)
+        self.assertIn("localStorage.setItem(TUTORIAL_KEY", self.javascript)
+        self.assertIn("activateWorkspaceTab(step.tab)", self.javascript)
+
+    def test_desktop_operational_tabs_are_narrower_and_review_heading_is_blue(self):
+        self.assertIn("width: min(100%,500px)", self.html)
+        self.assertIn("#review-dialog .review-header h2", self.html)
+        self.assertIn("color: #08285a", self.html)
 
     def test_inactivity_reset_is_explained_and_warned_in_a_modal(self):
         self.assertNotIn('id="reset-application-btn"', self.html)
