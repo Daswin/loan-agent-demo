@@ -18,18 +18,6 @@
     .card { background: rgba(248,250,252,.98); border: 1px solid rgba(212,175,55,.35); border-radius: 12px; padding: 20px; box-shadow: 0 18px 45px rgba(0,0,0,.28); }
     .card h2, .card h3 { margin-top: 0; }
     .card h2 { color: #0c1f3d; font-family: 'Cinzel', serif; letter-spacing: -.015em; }
-    .application-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-    .application-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 9px; }
-    .review-button { padding: 7px 10px; border-color: #9a7a16; background: #f8f2df; color: #173a64; font-size: .78rem; }
-    .reset-button { padding: 7px 10px; border-color: #9f4450; background: transparent; color: #7e2432; font-size: .78rem; }
-    .reset-button:hover:not(:disabled) { background: #8b2f3d; color: white; }
-    .completion { margin: 0 0 18px; padding: 14px; border: 1px solid #d4af37; border-radius: 10px; background: linear-gradient(135deg, #faf7ec, #edf3f8); }
-    .completion-head, .completion-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    .completion-head strong { color: #123b68; }
-    .completion-track { height: 9px; margin: 10px 0 8px; overflow: hidden; border-radius: 999px; background: #dce5ef; }
-    .completion-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #1a3a6b, #d4af37); transition: width .35s ease; }
-    .completion-meta { color: #637083; font-size: .78rem; }
-    .completion-guidance { margin: 9px 0 0; color: #405269; font-size: .82rem; }
     .muted { color: #637083; font-size: .9rem; }
     .badge { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #e9dfbd; color: #123b68; font-weight: 700; font-size: .78rem; }
     #chat-window { height: 390px; overflow-y: auto; border: 1px solid #dce3ec; border-radius: 9px; padding: 14px; background: #f8fafc; }
@@ -129,6 +117,15 @@
     .benefit strong { font-size: .92rem; }
     .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
     .assistant-shell { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
+    .progress-rail { position: absolute; z-index: 4; top: 50%; left: -82px; width: 70px; transform: translateY(-50%); display: grid; gap: 0; padding: 15px 8px; border: 1px solid rgba(255,255,255,.72); border-radius: 24px; background: rgba(249,248,245,.76); box-shadow: 0 18px 40px rgba(18,42,75,.14); backdrop-filter: blur(18px); }
+    .progress-stage { position: relative; display: grid; justify-items: center; gap: 5px; min-height: 72px; color: #7183a0; text-align: center; font-size: .58rem; line-height: 1.15; }
+    .progress-stage:not(:last-child)::after { content: ""; position: absolute; top: 28px; bottom: -4px; left: 50%; width: 2px; transform: translateX(-50%); background: #d7dee8; }
+    .stage-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 27px; height: 27px; border: 2px solid #c8d2e1; border-radius: 50%; background: #f8f9fb; color: #6c7f9c; font-size: .69rem; font-weight: 800; }
+    .progress-stage.complete { color: #174e91; }
+    .progress-stage.complete .stage-dot { border-color: #2874d4; color: white; background: #2874d4; }
+    .progress-stage.complete:not(:last-child)::after { background: #2874d4; }
+    .progress-stage.current { color: #082e65; font-weight: 700; }
+    .progress-stage.current .stage-dot { border-color: #c99716; color: #6e4e00; background: #fff4ce; box-shadow: 0 0 0 5px rgba(212,175,55,.14); }
     .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px 12px; }
     .assistant-identity { display: flex; align-items: center; gap: 12px; }
     .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 250px auto; background-position: 57% 21%; }
@@ -143,12 +140,8 @@
     .tab-button.active { color: #0c54bc; background: rgba(255,255,255,.82); box-shadow: 0 4px 14px rgba(28,63,105,.08); }
     .tab-panel { display: none; min-height: 0; flex: 1; overflow-y: auto; padding: 14px 20px 20px; }
     .tab-panel.active { display: flex; flex-direction: column; }
-    .application-bar { margin: 0 0 9px; }
-    .application-actions { gap: 6px; }
-    .review-button,.reset-button { padding: 6px 8px; }
-    .completion { margin: 0 0 8px; padding: 9px 11px; background: rgba(255,255,255,.64); }
-    .completion-meta,.completion-guidance { font-size: .7rem; }
-    .completion-guidance { margin-top: 6px; }
+    .chat-context { display: flex; align-items: center; justify-content: space-between; min-height: 24px; padding: 0 5px 5px; color: #657893; font-size: .7rem; }
+    .chat-context strong { color: #173a6a; font-weight: 700; }
     .conversation-heading { margin: 8px 0 3px; color: #092351; font: 600 1rem 'Cinzel',serif; }
     #chat-window { height: auto; min-height: 0; flex: 1; border: 0; padding: 8px 5px 16px; background: transparent; }
     .message { position: relative; max-width: 78%; margin: 13px 0; padding: 13px 15px; border-radius: 19px; line-height: 1.45; box-shadow: 0 6px 18px rgba(31,51,77,.06); }
@@ -174,6 +167,28 @@
     .operator { background: rgba(247,241,220,.88) !important; }
     .global-notice { min-height: 0; margin: 0 20px 8px; padding: 0; font-size: .8rem; }
     .mobile-nav { display: none; }
+    #review-dialog { width: min(840px,calc(100% - 36px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 26px; background: rgba(250,249,247,.94); box-shadow: 0 30px 90px rgba(5,28,63,.24); backdrop-filter: blur(28px); }
+    #review-dialog::backdrop { background: rgba(11,31,58,.42); backdrop-filter: blur(7px); }
+    #review-dialog .review-header { padding: 25px 28px 20px; color: #08285a; background: linear-gradient(135deg,rgba(255,255,255,.96),rgba(236,243,252,.9)); border-bottom: 1px solid rgba(16,64,123,.1); }
+    #review-dialog .review-header h2 { margin: 0 0 5px; font: 600 1.7rem 'Cinzel',serif; }
+    #review-dialog .review-header p { color: #637895; }
+    #review-dialog .dialog-close { border: 1px solid #b8c9df; border-radius: 999px; color: #174b8c; background: rgba(255,255,255,.85); }
+    #review-dialog .review-content { padding: 24px 28px 30px; background: linear-gradient(180deg,rgba(248,250,253,.72),rgba(255,252,246,.88)); }
+    #review-dialog .review-summary { gap: 12px; }
+    #review-dialog .review-stat { border: 1px solid rgba(28,82,148,.12); border-radius: 15px; background: rgba(255,255,255,.84); box-shadow: 0 8px 22px rgba(27,61,102,.06); }
+    #review-dialog .review-section { margin-top: 18px; padding: 18px; border: 1px solid rgba(30,75,132,.1); border-radius: 18px; background: rgba(255,255,255,.72); }
+    #review-dialog .review-section h3 { margin-top: 0; color: #0a3976; font-family: 'Cinzel',serif; }
+    #review-dialog .review-field,#review-dialog .review-document { border-color: rgba(32,79,137,.11); background: #f8fafc; }
+    #review-dialog .review-field.missing { border-color: rgba(201,151,22,.35); background: #fff9e9; }
+    .inactivity-dialog { width: min(480px,calc(100% - 32px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 24px; color: #092c60; background: rgba(252,250,246,.96); box-shadow: 0 28px 80px rgba(8,31,61,.25); backdrop-filter: blur(24px); }
+    .inactivity-dialog::backdrop { background: rgba(11,31,58,.38); backdrop-filter: blur(6px); }
+    .inactivity-body { padding: 30px; }
+    .inactivity-icon { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 18px; border-radius: 50%; color: #0c55b8; background: #e9f2ff; font-size: 1.35rem; }
+    .inactivity-body h2 { margin: 0 0 10px; font: 600 1.55rem 'Cinzel',serif; }
+    .inactivity-body p { margin: 0; color: #5d7190; line-height: 1.55; }
+    .inactivity-countdown { margin-top: 12px !important; color: #8a6508 !important; font-weight: 700; }
+    .inactivity-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
+    .inactivity-actions button { min-width: 130px; }
     .mobile-menu { display: none; }
 
     @media (max-width: 920px) {
@@ -186,12 +201,16 @@
       .hero-copy h1 { width: 72%; margin: 0 0 15px; font-size: clamp(2.2rem,10vw,3.15rem); }
       .hero-copy > p { width: 67%; margin: 0; font-size: .86rem; }
       .assistant-shell { width: 100%; height: auto; min-height: 590px; overflow: visible; border: 0; border-radius: 24px 24px 0 0; background: rgba(249,246,240,.88); box-shadow: 0 -8px 30px rgba(35,42,52,.08); backdrop-filter: blur(18px); }
+      .progress-rail { position: static; width: auto; transform: none; grid-template-columns: repeat(4,1fr); gap: 0; margin: 0 15px 4px; padding: 9px 6px 6px; border-radius: 15px; box-shadow: none; }
+      .progress-stage { min-height: 48px; font-size: .55rem; }
+      .progress-stage:not(:last-child)::after { top: 12px; right: -50%; bottom: auto; left: 50%; width: 100%; height: 2px; transform: none; }
+      .stage-dot { width: 24px; height: 24px; }
       .assistant-header { padding: 17px 18px 8px; }
       .workspace-tabs { display: none; }
       .tab-panel { min-height: 570px; padding: 12px 15px 20px; overflow: visible; }
       .tab-panel:not(.active) { display: none; }
       .tab-panel.active { display: flex; }
-      .application-bar,.completion,.conversation-heading { display: none; }
+      .application-bar,.completion,.conversation-heading,.chat-context { display: none; }
       #chat-window { min-height: 420px; overflow: visible; }
       .message { max-width: 79%; }
       .composer { position: sticky; bottom: 72px; z-index: 5; }
@@ -241,6 +260,12 @@
     </section>
 
     <section id="assistant-workspace" class="assistant-shell" aria-label="Loan application workspace">
+      <aside class="progress-rail" aria-label="Application progress">
+        <div id="stage-information" class="progress-stage current"><span class="stage-dot">1</span><span>Information</span></div>
+        <div id="stage-documents" class="progress-stage"><span class="stage-dot">2</span><span>Documents</span></div>
+        <div id="stage-credit" class="progress-stage"><span class="stage-dot">3</span><span>Credit check</span></div>
+        <div id="stage-submission" class="progress-stage"><span class="stage-dot">4</span><span>Submission</span></div>
+      </aside>
       <div class="assistant-header">
         <div class="assistant-identity"><span class="assistant-avatar" aria-hidden="true"></span><div class="assistant-title"><strong>Loan Assistant</strong><span><i class="online-dot"></i> Online</span></div></div>
         <span class="assistant-menu" aria-hidden="true">••• &nbsp;—</span>
@@ -253,8 +278,7 @@
       </nav>
 
       <section id="chat-panel" class="tab-panel active">
-        <div class="application-bar"><div><div class="muted" id="customer-name">New applicant</div><strong id="application-id">Starting…</strong></div><div class="application-actions"><span class="badge" id="application-status">INITIALIZING</span><button id="review-application-btn" class="review-button" type="button">Review</button><button id="reset-application-btn" class="reset-button" type="button">Reset</button></div></div>
-        <div class="completion" aria-label="Application completion"><div class="completion-head"><span>Application completion</span><strong id="completion-value">0%</strong></div><div id="completion-track" class="completion-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="completion-bar" class="completion-fill"></div></div><div class="completion-meta"><span id="information-progress">Information 0%</span><span id="documents-progress">Documents 0%</span></div><p id="completion-guidance" class="completion-guidance"></p></div>
+        <div class="chat-context"><strong id="customer-name">New applicant</strong><span id="application-status">INITIALIZING</span><span id="application-id" hidden>Starting…</span></div>
         <h2 class="conversation-heading">Application conversation</h2>
         <div id="chat-window" aria-live="polite"></div>
         <div class="row composer"><input id="msg-input" type="text" placeholder="Type your message…" autocomplete="off"><button id="send-btn" type="button">Send</button></div>
@@ -316,6 +340,16 @@
       <p id="status-dialog-message" class="status-message"></p>
       <ul id="status-dialog-items" class="status-list"></ul>
       <p id="status-dialog-note" class="credit-fail-note" hidden></p>
+    </div>
+  </dialog>
+
+  <dialog id="inactivity-dialog" class="inactivity-dialog" aria-labelledby="inactivity-title">
+    <div class="inactivity-body">
+      <div class="inactivity-icon" aria-hidden="true">◷</div>
+      <h2 id="inactivity-title">A quick note before we begin</h2>
+      <p id="inactivity-message">For this shared demonstration, an application returns to its original state after five minutes without activity.</p>
+      <p id="inactivity-countdown" class="inactivity-countdown" hidden></p>
+      <div class="inactivity-actions"><button id="inactivity-action-btn" type="button">Continue</button></div>
     </div>
   </dialog>
 

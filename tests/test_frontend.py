@@ -112,8 +112,9 @@ class FrontendContractTests(unittest.TestCase):
         self.assertNotIn('return ["Yes", "No"]', self.javascript)
         self.assertIn('["Agree", "Disagree"]', self.javascript)
 
-    def test_application_review_is_always_available_from_conversation(self):
-        self.assertIn('id="review-application-btn"', self.html)
+    def test_application_review_is_always_available_as_a_tab(self):
+        self.assertNotIn('id="review-application-btn"', self.html)
+        self.assertIn('class="tab-button review-tab"', self.html)
         self.assertIn('id="review-dialog"', self.html)
         self.assertIn("APPLICATION_REVIEW_SECTIONS", self.javascript)
         self.assertIn("applicationState.provided_fields", self.javascript)
@@ -138,18 +139,24 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("uploadDocument(", self.javascript)
         self.assertIn("Submit Application", self.html)
 
-    def test_manual_and_inactivity_reset_controls_are_present(self):
-        self.assertIn('id="reset-application-btn"', self.html)
-        self.assertIn("/reset", self.javascript)
+    def test_inactivity_reset_is_explained_and_warned_in_a_modal(self):
+        self.assertNotIn('id="reset-application-btn"', self.html)
+        self.assertIn('id="inactivity-dialog"', self.html)
+        self.assertIn('id="inactivity-countdown"', self.html)
         self.assertIn("/activity", self.javascript)
-        self.assertIn("60_000", self.javascript)
+        self.assertIn("240_000", self.javascript)
+        self.assertIn("300_000", self.javascript)
         self.assertIn("five minutes of inactivity", self.javascript)
 
+    def test_chat_uses_external_stage_progress_instead_of_completion_bar(self):
+        self.assertNotIn('id="completion-track"', self.html)
+        self.assertNotIn('id="completion-bar"', self.html)
+        for stage in ("information", "documents", "credit", "submission"):
+            self.assertIn(f'id="stage-{stage}"', self.html)
+        self.assertIn("renderProgressRail", self.javascript)
+
     def test_application_shell_avoids_mixed_cached_frontend_versions(self):
-        self.assertIn(
-            'byId("reset-application-btn")?.addEventListener',
-            self.javascript,
-        )
+        self.assertNotIn('byId("reset-application-btn")', self.javascript)
         self.assertIn("location /application/", self.nginx_config)
         self.assertIn("no-store, no-cache, must-revalidate", self.nginx_config)
 

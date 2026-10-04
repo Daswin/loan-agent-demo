@@ -335,6 +335,40 @@ function openApplicationReview() {
   byId("review-dialog").showModal();
 }
 
+function renderProgressRail() {
+  const completion = applicationState.completion || {};
+  const stages = [
+    {
+      id: "stage-information",
+      complete: (completion.information_percent || 0) === 100,
+    },
+    {
+      id: "stage-documents",
+      complete: (completion.documents_percent || 0) === 100,
+    },
+    {
+      id: "stage-credit",
+      complete: Boolean(
+        applicationState.credit_bureau.consent
+        && applicationState.credit_bureau.result,
+      ),
+    },
+    {
+      id: "stage-submission",
+      complete: applicationState.status === "SUBMITTED",
+    },
+  ];
+  const currentIndex = stages.findIndex((stage) => !stage.complete);
+  stages.forEach((stage, index) => {
+    const element = byId(stage.id);
+    element.classList.toggle("complete", stage.complete);
+    element.classList.toggle("current", index === currentIndex);
+    element.classList.toggle("pending", !stage.complete && index !== currentIndex);
+    const dot = element.querySelector(".stage-dot");
+    dot.textContent = stage.complete ? "✓" : String(index + 1);
+  });
+}
+
 function showStatusDialog({ title, subtitle, message, items = [], note = "" }) {
   byId("status-dialog-title").textContent = title;
   byId("status-dialog-subtitle").textContent = subtitle;
@@ -422,24 +456,7 @@ function renderApplication() {
   ].filter(Boolean).join(" ");
   byId("customer-name").textContent = applicantName || "New applicant";
   byId("application-status").textContent = applicationState.status;
-  const completion = applicationState.completion || {};
-  const overall = completion.overall_percent || 0;
-  byId("completion-value").textContent = `${overall}%`;
-  byId("completion-bar").style.width = `${overall}%`;
-  byId("completion-track").setAttribute("aria-valuenow", String(overall));
-  byId("information-progress").textContent =
-    `Information ${completion.information_percent || 0}%`;
-  byId("documents-progress").textContent =
-    `Documents ${completion.documents_percent || 0}%`;
-  const fieldsRemaining = (completion.fields_required || 0)
-    - (completion.fields_completed || 0);
-  const documentsRemaining = (completion.documents_required || 0)
-    - (completion.documents_completed || 0);
-  byId("completion-guidance").textContent = fieldsRemaining > 0
-    ? `${fieldsRemaining} information ${fieldsRemaining === 1 ? "item" : "items"} and ${documentsRemaining} ${documentsRemaining === 1 ? "document" : "documents"} remaining.`
-    : documentsRemaining > 0
-      ? `Your information is complete. Upload ${documentsRemaining} remaining ${documentsRemaining === 1 ? "document" : "documents"} to finish the package.`
-      : "Your information and required documents are complete.";
+  renderProgressRail();
   byId("consent-checkbox").checked = applicationState.credit_bureau.consent;
   const workflowComplete = ["SUBMITTED", "SUBMISSION_FAILED"].includes(
     applicationState.status,
@@ -782,31 +799,55 @@ async function submitPackage() {
   }
 }
 
-async function resetApplication() {
-  const confirmed = window.confirm(
-    "Reset this demo application? Information entered during this session, uploaded documents, checks, and submission progress will be cleared.",
-  );
-  if (!confirmed) return;
+let heartbeatInProgress = false;
+let inactivityWarningTimer = null;
+let inactivityResetTimer = null;
+let inactivityCountdownTimer = null;
+let inactivityDeadline = 0;
+let lastActivitySyncAt = 0;
 
-  const button = byId("reset-application-btn");
-  button.disabled = true;
-  setNotice("Resetting the application...");
-  try {
-    applicationState = await api(
-      `/api/applications/${applicationId}/reset`,
-      { method: "POST" },
-    );
-    renderApplication();
-    startFreshConversation();
-    setNotice("Application restored to its original demo state.", "success");
-  } catch (error) {
-    setNotice(error.message, "error");
-  } finally {
-    button.disabled = false;
-  }
+function closeInactivityDialog() {
+  const dialog = byId("inactivity-dialog");
+  if (dialog.open) dialog.close();
+  window.clearInterval(inactivityCountdownTimer);
 }
 
-let heartbeatInProgress = false;
+function showInactivityDialog(mode = "intro") {
+  const warning = mode === "warning";
+  byId("inactivity-title").textContent = warning
+    ? "Are you still working?"
+    : "A quick note before we begin";
+  byId("inactivity-message").textContent = warning
+    ? "This application is about to return to its original demo state because no activity has been detected."
+    : "For this shared demonstration, an application returns to its original state after five minutes without activity.";
+  byId("inactivity-action-btn").textContent = warning ? "I'm still here" : "Continue";
+  const countdown = byId("inactivity-countdown");
+  countdown.hidden = !warning;
+  if (warning) {
+    const updateCountdown = () => {
+      const seconds = Math.max(0, Math.ceil((inactivityDeadline - Date.now()) / 1000));
+      countdown.textContent = `Resetting in ${seconds} second${seconds === 1 ? "" : "s"}.`;
+    };
+    updateCountdown();
+    window.clearInterval(inactivityCountdownTimer);
+    inactivityCountdownTimer = window.setInterval(updateCountdown, 1000);
+  }
+  const dialog = byId("inactivity-dialog");
+  if (!dialog.open) dialog.showModal();
+}
+
+function scheduleInactivityTimers() {
+  window.clearTimeout(inactivityWarningTimer);
+  window.clearTimeout(inactivityResetTimer);
+  window.clearInterval(inactivityCountdownTimer);
+  inactivityDeadline = Date.now() + 300_000;
+  inactivityWarningTimer = window.setTimeout(
+    () => showInactivityDialog("warning"),
+    240_000,
+  );
+  inactivityResetTimer = window.setTimeout(recordActivity, 300_000);
+}
+
 async function recordActivity() {
   if (!applicationId || document.visibilityState !== "visible" || heartbeatInProgress) {
     return;
@@ -821,13 +862,27 @@ async function recordActivity() {
       applicationState = result.application;
       renderApplication();
       startFreshConversation(true);
-      setNotice("Application reset after five minutes of inactivity.", "success");
+      byId("inactivity-title").textContent = "Application reset";
+      byId("inactivity-message").textContent =
+        "The application returned to its original demo state after five minutes without activity. You can continue whenever you're ready.";
+      byId("inactivity-countdown").hidden = true;
+      byId("inactivity-action-btn").textContent = "Continue";
+      const dialog = byId("inactivity-dialog");
+      if (!dialog.open) dialog.showModal();
     }
   } catch (error) {
     console.warn("Unable to record application activity.", error);
   } finally {
     heartbeatInProgress = false;
+    scheduleInactivityTimers();
   }
+}
+
+function noteCustomerActivity(syncWithBackend = true) {
+  scheduleInactivityTimers();
+  if (!syncWithBackend || Date.now() - lastActivitySyncAt < 30_000) return;
+  lastActivitySyncAt = Date.now();
+  recordActivity();
 }
 
 byId("send-btn").addEventListener("click", sendMessage);
@@ -845,20 +900,25 @@ byId("credit-fail-btn").addEventListener("click", () => recordCreditResult("FAIL
 byId("validate-btn").addEventListener("click", validatePackage);
 byId("submit-btn").addEventListener("click", submitPackage);
 byId("problem-btn").addEventListener("click", () => showQuickReplies(PROBLEM_OPTIONS));
-byId("review-application-btn").addEventListener("click", openApplicationReview);
 byId("close-review-btn").addEventListener("click", () => byId("review-dialog").close());
 byId("close-status-dialog-btn").addEventListener("click", () => byId("status-dialog").close());
-byId("reset-application-btn")?.addEventListener("click", resetApplication);
+byId("inactivity-action-btn").addEventListener("click", () => {
+  closeInactivityDialog();
+  noteCustomerActivity(true);
+});
 document.querySelectorAll("[data-tab-target]").forEach((button) => {
   button.addEventListener("click", () => activateWorkspaceTab(button.dataset.tabTarget));
 });
 document.querySelectorAll(".review-tab").forEach((button) => {
   button.addEventListener("click", openApplicationReview);
 });
-window.setInterval(recordActivity, 60_000);
+document.addEventListener("pointerdown", () => noteCustomerActivity(true), { passive: true });
+document.addEventListener("keydown", () => noteCustomerActivity(true));
 
 refreshApplication()
   .then(() => {
     startFreshConversation(Boolean(applicationState.last_reset_at));
+    scheduleInactivityTimers();
+    showInactivityDialog("intro");
   })
   .catch((error) => setNotice(error.message, "error"));
