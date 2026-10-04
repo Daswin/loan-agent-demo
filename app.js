@@ -438,6 +438,12 @@ async function refreshApplication() {
     await createApplication();
     return;
   }
+  if (applicationState.status === "IN_PROGRESS") {
+    applicationState = await api(
+      `/api/applications/${applicationId}/documents/start`,
+      { method: "POST" },
+    );
+  }
   renderApplication();
 }
 
@@ -460,8 +466,6 @@ function renderApplication() {
     !applicationState.credit_bureau.consent || workflowComplete;
   byId("credit-fail-btn").disabled =
     !applicationState.credit_bureau.consent || workflowComplete;
-  byId("start-documents-btn").disabled =
-    applicationState.status !== "IN_PROGRESS";
   const creditCheckFailed = applicationState.credit_bureau.result === "FAIL";
   byId("validate-btn").disabled =
     applicationState.status !== "VALIDATION_REQUIRED" || creditCheckFailed;
@@ -536,6 +540,30 @@ function renderDocuments() {
       feedback,
     ));
     controls.append(input, upload);
+
+    const cameraInput = document.createElement("input");
+    cameraInput.type = "file";
+    cameraInput.accept = "image/*";
+    cameraInput.setAttribute("capture", "environment");
+    cameraInput.className = "camera-input";
+    cameraInput.disabled = input.disabled;
+    const cameraButton = document.createElement("button");
+    cameraButton.type = "button";
+    cameraButton.className = "camera-option secondary";
+    cameraButton.disabled = input.disabled;
+    cameraButton.textContent = "Take photo of document";
+    cameraButton.addEventListener("click", () => cameraInput.click());
+    cameraInput.addEventListener("change", () => {
+      if (cameraInput.files.length) {
+        uploadDocument(
+          record.document_type,
+          cameraInput,
+          cameraButton,
+          feedback,
+        );
+      }
+    });
+    controls.append(cameraInput, cameraButton);
 
     if (["RECEIVED", "PROCESSING"].includes(record.status)) {
       const process = document.createElement("button");
@@ -615,19 +643,6 @@ async function sendMessage(messageOverride = null) {
   }
 }
 
-async function startDocumentCollection() {
-  try {
-    applicationState = await api(
-      `/api/applications/${applicationId}/documents/start`,
-      { method: "POST" },
-    );
-    renderApplication();
-    setNotice("Document collection started.", "success");
-  } catch (error) {
-    setNotice(error.message, "error");
-  }
-}
-
 async function uploadDocument(documentType, input, uploadButton, feedback) {
   const file = input.files[0];
   if (!file) {
@@ -638,6 +653,7 @@ async function uploadDocument(documentType, input, uploadButton, feedback) {
   }
 
   const contentType = file.type || "application/octet-stream";
+  const idleButtonLabel = uploadButton.textContent;
   setNotice(`Uploading ${DOCUMENT_LABELS[documentType]}…`);
   uploadButton.disabled = true;
   uploadButton.textContent = "Uploading…";
@@ -686,7 +702,7 @@ async function uploadDocument(documentType, input, uploadButton, feedback) {
     feedback.textContent = `Upload failed: ${error.message}`;
     feedback.className = "document-feedback error";
     uploadButton.disabled = false;
-    uploadButton.textContent = "Upload";
+    uploadButton.textContent = idleButtonLabel;
   }
 }
 
@@ -885,7 +901,6 @@ byId("msg-input").addEventListener("keydown", (event) => {
     sendMessage();
   }
 });
-byId("start-documents-btn").addEventListener("click", startDocumentCollection);
 byId("auto-documents-btn").addEventListener("click", createDemoDocuments);
 byId("save-consent-btn").addEventListener("click", saveConsent);
 byId("credit-pass-btn").addEventListener("click", () => recordCreditResult("PASS"));

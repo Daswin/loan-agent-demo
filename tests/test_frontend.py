@@ -139,6 +139,20 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("uploadDocument(", self.javascript)
         self.assertIn("Submit Application", self.html)
 
+    def test_document_uploads_are_immediately_available_with_mobile_camera(self):
+        self.assertNotIn('id="start-documents-btn"', self.html)
+        self.assertNotIn("startDocumentCollection", self.javascript)
+        self.assertIn('applicationState.status === "IN_PROGRESS"', self.javascript)
+        self.assertIn('cameraInput.accept = "image/*"', self.javascript)
+        self.assertIn('cameraInput.setAttribute("capture", "environment")', self.javascript)
+        self.assertIn('cameraButton.textContent = "Take photo of document"', self.javascript)
+        self.assertIn(".camera-option { display: none", self.html)
+        self.assertIn(".camera-option { display: inline-flex", self.html)
+
+    def test_mobile_header_has_customer_selection_back_link(self):
+        self.assertIn('class="mobile-back" href="/"', self.html)
+        self.assertIn("Back to customer selection", self.html)
+
     def test_inactivity_reset_is_explained_and_warned_in_a_modal(self):
         self.assertNotIn('id="reset-application-btn"', self.html)
         self.assertIn('id="inactivity-dialog"', self.html)

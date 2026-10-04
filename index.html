@@ -113,7 +113,7 @@
     .benefits { display: grid; gap: 15px; margin-top: 34px; }
     .benefit { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; }
     .benefit-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.9); box-shadow: 0 7px 18px rgba(27,59,102,.1); }
-    .benefit-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .benefit-icon svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .benefit strong, .benefit span { display: block; }
     .benefit strong { font-size: .92rem; }
     .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
@@ -162,6 +162,9 @@
     .document { padding: 10px 12px; border: 1px solid rgba(19,57,102,.08); border-radius: 13px; background: rgba(255,255,255,.86); box-shadow: 0 5px 16px rgba(30,59,94,.06); }
     .document:first-child { border-top: 1px solid rgba(19,57,102,.08); }
     .document-controls { align-items: center; }
+    .camera-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+    .camera-option { display: none; align-items: center; gap: 6px; }
+    .camera-option svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .document input { max-width: 100%; }
     .documents-card .row { margin-top: 7px; }
     .documents-card button,.workflow-card button { padding: 8px 10px; font-size: .75rem; }
@@ -198,12 +201,12 @@
     .inactivity-countdown { margin-top: 12px !important; color: #8a6508 !important; font-weight: 700; }
     .inactivity-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
     .inactivity-actions button { min-width: 130px; }
-    .mobile-menu { display: none; }
+    .mobile-back { display: none; }
 
     @media (max-width: 920px) {
       .site-header { position: absolute; height: 72px; padding: 0 22px; background: transparent; }
       .brand-divider,.brand-context,.header-links { display: none; }
-      .mobile-menu { display: block; border: 0; padding: 4px; color: #0b376f; background: transparent; font-size: 1.5rem; }
+      .mobile-back { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 999px; color: #0b376f; background: rgba(255,255,255,.72); text-decoration: none; font-size: .75rem; font-weight: 700; box-shadow: 0 5px 14px rgba(15,56,105,.08); }
       .experience { min-height: 100dvh; padding: 82px 18px 82px; display: block; overflow: visible; background-image: linear-gradient(180deg,rgba(255,255,255,.93) 0%,rgba(255,255,255,.36) 29%,rgba(246,241,233,.9) 63%,#f7f8fb 100%),url('/application/assets/loan-assistant-hero.png'); background-size: auto 720px; background-repeat: no-repeat; background-position: 55% 0; }
       .hero-copy { min-height: 430px; max-width: 100%; padding: 88px 22px 0; }
       .hero-copy .eyebrow,.benefits { display: none; }
@@ -224,6 +227,7 @@
       .message { max-width: 79%; }
       .composer { position: sticky; bottom: 72px; z-index: 5; }
       .conversation-actions { padding-bottom: 4px; }
+      .camera-option { display: inline-flex; }
       .mobile-nav { position: fixed; z-index: 25; inset: auto 0 0; height: 70px; display: grid; grid-template-columns: repeat(4,1fr); padding: 7px 12px max(7px,env(safe-area-inset-bottom)); border-top: 1px solid #e2e7ee; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
       .mobile-nav .tab-button { display: grid; justify-items: center; gap: 2px; padding: 4px; border-radius: 8px; font-size: .68rem; }
       .nav-icon { font-size: 1.17rem; line-height: 1; }
@@ -253,7 +257,7 @@
       <a class="header-link" href="/" aria-label="Back to customer selection">← &nbsp; Back to customer selection</a>
       <a class="header-link" href="#assistant-workspace">ⓘ &nbsp; Help</a>
     </nav>
-    <span class="mobile-menu" aria-hidden="true">☰</span>
+    <a class="mobile-back" href="/" aria-label="Back to customer selection">← <span>Customers</span></a>
   </header>
 
   <main class="experience">
@@ -296,7 +300,7 @@
 
       <section id="documents-panel" class="tab-panel documents-card">
         <h2 class="panel-title">Upload Your Documents</h2><p class="panel-intro">Upload each required document. You can take a photo, upload a file, or use a template where available.</p>
-        <div class="row"><button id="start-documents-btn" class="secondary" type="button">Start document collection</button><button id="auto-documents-btn" class="warning" type="button">Create demo documents</button></div>
+        <div class="row"><button id="auto-documents-btn" class="warning" type="button">Create demo documents</button></div>
         <div id="document-list"></div>
       </section>
 
