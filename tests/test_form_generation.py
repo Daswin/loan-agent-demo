@@ -77,7 +77,8 @@ class SalaryAssignmentFormTests(unittest.TestCase):
         self.assertIn("Monthly", document)
         self.assertIn("Monthly deduction amount", document)
         self.assertIn(f"J${expected:,.2f}", document)
-        self.assertIn("20%", document)
+        self.assertNotIn("Annual interest rate", document)
+        self.assertIn('class="deduction-amount"', document)
 
 
 if __name__ == "__main__":

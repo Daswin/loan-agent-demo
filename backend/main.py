@@ -1,4 +1,6 @@
 import datetime
+import base64
+import io
 import os
 import re
 from typing import Any, Dict
@@ -42,6 +44,11 @@ from .documents import (
 from .document_processing import process_document_with_document_ai
 from .demo_documents import generate_and_upload_demo_documents
 from .models import CreditResult, DocumentType
+from .mobile_upload import (
+    create_mobile_upload_session,
+    get_mobile_upload_session,
+    update_mobile_upload_session,
+)
 from .field_rules import field_question
 from .form_generation import (
     generate_salary_assignment_form,
@@ -112,6 +119,10 @@ class CreditConsentRequest(BaseModel):
 
 class CreditCheckRequest(BaseModel):
     result: CreditResult
+
+
+class MobileUploadSessionRequest(BaseModel):
+    frontend_origin: str = Field(min_length=1)
 
 
 FIELD_CHOICES = {
@@ -614,6 +625,177 @@ async def salary_assignment_template_endpoint(application_id: str):
             )
         },
     )
+
+
+def _mobile_session_or_404(token: str):
+    session = get_mobile_upload_session(token)
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The mobile upload session was not found.",
+        )
+    if session.get("expired"):
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="The mobile upload session has expired.",
+        )
+    return session
+
+
+def _qr_data_url(value: str) -> str:
+    import qrcode
+
+    image = qrcode.make(value)
+    output = io.BytesIO()
+    image.save(output, format="PNG")
+    encoded = base64.b64encode(output.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
+@app.post(
+    "/api/applications/{application_id}/documents/{document_type}/"
+    "mobile-upload-session"
+)
+async def create_mobile_upload_session_endpoint(
+    application_id: str,
+    document_type: str,
+    payload: MobileUploadSessionRequest,
+):
+    application = _application_or_404(application_id)
+    typed_document = _document_type_or_422(document_type)
+    origin = payload.frontend_origin.rstrip("/")
+    if origin not in ALLOWED_ORIGINS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The mobile upload origin is not allowed.",
+        )
+    if application.status not in {
+        "DOCUMENTS_REQUIRED",
+        "DOCUMENTS_PROCESSING",
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Documents cannot be uploaded at this workflow stage.",
+        )
+    document = next(
+        (
+            item
+            for item in application.documents
+            if item.document_type == typed_document
+        ),
+        None,
+    )
+    if document is None or not document.upload_required:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This document is not available for customer upload.",
+        )
+    token, session = create_mobile_upload_session(
+        application_id,
+        typed_document.value,
+    )
+    mobile_url = f"{origin}/application/mobile-upload.html?token={token}"
+    return {
+        "token": token,
+        "mobile_url": mobile_url,
+        "qr_data_url": _qr_data_url(mobile_url),
+        "expires_at": session["expires_at"],
+    }
+
+
+@app.get("/api/mobile-upload-sessions/{token}")
+async def get_mobile_upload_session_endpoint(token: str):
+    session = _mobile_session_or_404(token)
+    return {
+        "document_type": session["document_type"],
+        "expires_at": session["expires_at"],
+        "upload_started": session["upload_started"],
+        "completed": session["completed"],
+        "filename": session.get("filename"),
+        "error": session.get("error"),
+    }
+
+
+@app.post("/api/mobile-upload-sessions/{token}/upload-url")
+async def mobile_upload_url_endpoint(token: str, payload: UploadUrlRequest):
+    session = _mobile_session_or_404(token)
+    if session["completed"] or session["upload_started"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This one-time mobile upload session has already been used.",
+        )
+    if not payload.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The mobile upload must be an image.",
+        )
+    typed_document = _document_type_or_422(session["document_type"])
+    object_path = build_storage_path(
+        session["application_id"],
+        typed_document,
+        payload.filename,
+    )
+    bucket_name = os.environ.get("UPLOAD_BUCKET")
+    if not bucket_name:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="UPLOAD_BUCKET is not configured.",
+        )
+    blob = storage.Client().bucket(bucket_name).blob(object_path)
+    signed_url = _generate_upload_url(blob, payload.content_type)
+    update_mobile_upload_session(
+        token,
+        upload_started=True,
+        filename=payload.filename,
+        content_type=payload.content_type,
+    )
+    return {
+        "url": signed_url,
+        "expires_at": session["expires_at"],
+    }
+
+
+@app.post("/api/mobile-upload-sessions/{token}/complete")
+async def complete_mobile_upload_endpoint(token: str):
+    session = _mobile_session_or_404(token)
+    if session["completed"]:
+        return {"completed": True, "filename": session.get("filename")}
+    if not session["upload_started"] or not session.get("filename"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No mobile photo upload has started.",
+        )
+    application_id = session["application_id"]
+    typed_document = _document_type_or_422(session["document_type"])
+    expected_path = build_storage_path(
+        application_id,
+        typed_document,
+        session["filename"],
+    )
+    bucket_name = os.environ.get("UPLOAD_BUCKET")
+    if bucket_name:
+        blob = storage.Client().bucket(bucket_name).blob(expected_path)
+        if not blob.exists():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The uploaded photo could not be verified.",
+            )
+    try:
+        register_document_received(
+            application_id,
+            typed_document,
+            session["filename"],
+            session["content_type"],
+        )
+        process_document_with_document_ai(application_id, typed_document)
+        update_mobile_upload_session(token, completed=True)
+    except (ValueError, RuntimeError) as exc:
+        update_mobile_upload_session(token, error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from exc
+    return {"completed": True, "filename": session["filename"]}
 
 
 @app.post(

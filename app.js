@@ -110,6 +110,10 @@ const PROBLEM_OPTIONS = [
 
 let applicationId = localStorage.getItem(APPLICATION_KEY);
 let applicationState = null;
+let generatedFormHtml = "";
+let generatedFormFilename = "salary_assignment_form.html";
+let mobileUploadPollTimer = null;
+let activeMobileUploadToken = null;
 localStorage.setItem(SESSION_KEY, sessionId);
 
 const byId = (id) => document.getElementById(id);
@@ -179,6 +183,7 @@ const TUTORIAL_STEPS = [
   { selector: '[data-tab-target="documents-panel"]', tab: "documents-panel", title: "Documents", description: "Open this tab to upload the three required documents. Uploads are available immediately." },
   { selector: "#document-list", tab: "documents-panel", title: "Required documents", description: "Choose a PDF or image for each slot. Uploaded files are processed through the prototype document workflow." },
   { selector: ".camera-option", tab: "documents-panel", mobileOnly: true, title: "Photograph a document", description: "On a phone, this opens the rear camera so you can photograph and upload a document directly." },
+  { selector: ".phone-upload-option", tab: "documents-panel", title: "Continue on your phone", description: "On desktop, open a secure one-time QR code so a phone can photograph this document and upload it to the same application." },
   { selector: "#auto-documents-btn", tab: "documents-panel", title: "Demo shortcut", description: "For stakeholder testing, this creates and uploads sample documents. Manual upload remains available." },
   { selector: '[data-tab-target="application-panel"]', tab: "application-panel", title: "Application controls", description: "This tab contains consent, simulated credit evaluation, validation, and submission." },
   { selector: "#consent-checkbox", tab: "application-panel", title: "Credit consent", description: "The applicant must explicitly provide consent before the simulated credit check can run." },
@@ -665,6 +670,16 @@ function renderDocuments() {
     });
     controls.append(cameraInput, cameraButton);
 
+    const phoneUploadButton = document.createElement("button");
+    phoneUploadButton.type = "button";
+    phoneUploadButton.className = "phone-upload-option secondary";
+    phoneUploadButton.textContent = "Upload using phone";
+    phoneUploadButton.disabled = input.disabled;
+    phoneUploadButton.addEventListener("click", () => {
+      startPhoneUpload(record.document_type);
+    });
+    controls.append(phoneUploadButton);
+
     if (["RECEIVED", "PROCESSING"].includes(record.status)) {
       const process = document.createElement("button");
       process.type = "button";
@@ -690,22 +705,90 @@ async function downloadSalaryAssignmentForm() {
       const error = await response.json();
       throw new Error(error.detail || "Unable to generate the form.");
     }
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    generatedFormHtml = await response.text();
     const applicantName = [
       applicationState.personal.first_name,
       applicationState.personal.last_name,
     ].filter(Boolean).join("_") || "Applicant";
-    link.href = url;
-    link.download = `salary_assignment_form_${applicantName}.html`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setNotice("Form downloaded. Open it to print, save as PDF, or sign it.", "success");
+    generatedFormFilename = `salary_assignment_form_${applicantName}.html`;
+    byId("form-preview-frame").srcdoc = generatedFormHtml;
+    byId("form-preview-dialog").showModal();
+    setNotice("Form generated and ready for review.", "success");
   } catch (error) {
     setNotice(error.message, "error");
+  }
+}
+
+function downloadGeneratedForm() {
+  if (!generatedFormHtml) return;
+  const blob = new Blob([generatedFormHtml], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = generatedFormFilename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function stopMobileUploadPolling() {
+  if (mobileUploadPollTimer) {
+    window.clearInterval(mobileUploadPollTimer);
+    mobileUploadPollTimer = null;
+  }
+}
+
+async function pollMobileUpload() {
+  if (!activeMobileUploadToken) return;
+  try {
+    const session = await api(
+      `/api/mobile-upload-sessions/${encodeURIComponent(activeMobileUploadToken)}`,
+    );
+    const statusText = byId("mobile-upload-status");
+    if (session.completed) {
+      statusText.textContent = "Photo uploaded successfully. You may close this window.";
+      statusText.classList.add("success");
+      stopMobileUploadPolling();
+      await refreshApplication();
+      setNotice(`${DOCUMENT_LABELS[session.document_type]} uploaded from your phone.`, "success");
+    } else if (session.error) {
+      statusText.textContent = session.error;
+      statusText.classList.add("error");
+      stopMobileUploadPolling();
+    } else if (session.upload_started) {
+      statusText.textContent = "Photo received. Finishing document processing…";
+    }
+  } catch (error) {
+    byId("mobile-upload-status").textContent = error.message;
+    byId("mobile-upload-status").classList.add("error");
+    stopMobileUploadPolling();
+  }
+}
+
+async function startPhoneUpload(documentType) {
+  stopMobileUploadPolling();
+  activeMobileUploadToken = null;
+  const statusText = byId("mobile-upload-status");
+  statusText.className = "qr-status";
+  statusText.textContent = "Creating a secure connection…";
+  const dialog = byId("mobile-upload-dialog");
+  if (!dialog.open) dialog.showModal();
+  try {
+    const session = await api(
+      `/api/applications/${applicationId}/documents/${documentType}/mobile-upload-session`,
+      {
+        method: "POST",
+        body: JSON.stringify({ frontend_origin: window.location.origin }),
+      },
+    );
+    activeMobileUploadToken = session.token;
+    byId("mobile-upload-qr").src = session.qr_data_url;
+    statusText.textContent = `Waiting for ${DOCUMENT_LABELS[documentType]} from your phone…`;
+    mobileUploadPollTimer = window.setInterval(pollMobileUpload, 5000);
+  } catch (error) {
+    statusText.textContent = error.message;
+    statusText.classList.add("error");
   }
 }
 
@@ -1028,6 +1111,20 @@ byId("submit-btn").addEventListener("click", submitPackage);
 byId("problem-btn").addEventListener("click", () => showQuickReplies(PROBLEM_OPTIONS));
 byId("close-review-btn").addEventListener("click", () => byId("review-dialog").close());
 byId("close-status-dialog-btn").addEventListener("click", () => byId("status-dialog").close());
+byId("close-form-preview-btn").addEventListener("click", () => byId("form-preview-dialog").close());
+byId("print-form-btn").addEventListener("click", () => {
+  byId("form-preview-frame").contentWindow?.print();
+});
+byId("download-form-btn").addEventListener("click", downloadGeneratedForm);
+byId("close-mobile-upload-btn").addEventListener("click", () => {
+  stopMobileUploadPolling();
+  activeMobileUploadToken = null;
+  byId("mobile-upload-dialog").close();
+});
+byId("mobile-upload-dialog").addEventListener("close", () => {
+  stopMobileUploadPolling();
+  activeMobileUploadToken = null;
+});
 byId("inactivity-action-btn").addEventListener("click", () => {
   closeInactivityDialog();
   noteCustomerActivity(true);

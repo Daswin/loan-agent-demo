@@ -10,6 +10,12 @@ class FrontendContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.html = (PROJECT_ROOT / "index.html").read_text(encoding="utf-8")
         cls.javascript = (PROJECT_ROOT / "app.js").read_text(encoding="utf-8")
+        cls.mobile_upload_html = (
+            PROJECT_ROOT / "mobile-upload.html"
+        ).read_text(encoding="utf-8")
+        cls.mobile_upload_javascript = (
+            PROJECT_ROOT / "mobile-upload.js"
+        ).read_text(encoding="utf-8")
         cls.landing = (
             PROJECT_ROOT / "landing" / "src" / "App.tsx"
         ).read_text(encoding="utf-8")
@@ -204,6 +210,39 @@ class FrontendContractTests(unittest.TestCase):
         for stage in ("information", "documents", "credit", "submission"):
             self.assertIn(f'id="stage-{stage}"', self.html)
         self.assertIn("renderProgressRail", self.javascript)
+
+    def test_progress_rail_is_positioned_outside_the_clipped_chat_shell(self):
+        self.assertIn('class="assistant-workspace-wrap"', self.html)
+        rail_position = self.html.index('class="progress-rail"')
+        shell_position = self.html.index('class="assistant-shell"')
+        self.assertLess(rail_position, shell_position)
+        self.assertIn(".assistant-workspace-wrap { position: relative", self.html)
+
+    def test_benefit_icons_are_centered_without_span_rule_override(self):
+        self.assertIn(".benefit-icon { display: flex; align-items: center; justify-content: center", self.html)
+        self.assertIn(".benefit > div strong, .benefit > div span", self.html)
+        self.assertNotIn(".benefit strong, .benefit span", self.html)
+
+    def test_generated_salary_form_opens_in_an_in_page_preview(self):
+        self.assertIn('id="form-preview-dialog"', self.html)
+        self.assertIn('id="form-preview-frame"', self.html)
+        self.assertIn('id="print-form-btn"', self.html)
+        self.assertIn('id="download-form-btn"', self.html)
+        self.assertIn('byId("form-preview-frame").srcdoc = generatedFormHtml', self.javascript)
+        self.assertIn("contentWindow?.print()", self.javascript)
+
+    def test_desktop_phone_upload_handoff_and_mobile_camera_page_are_present(self):
+        self.assertIn('id="mobile-upload-dialog"', self.html)
+        self.assertIn('phoneUploadButton.textContent = "Upload using phone"', self.javascript)
+        self.assertIn("/mobile-upload-session", self.javascript)
+        self.assertIn("window.setInterval(pollMobileUpload, 5000)", self.javascript)
+        self.assertIn('capture="environment"', self.mobile_upload_html)
+        self.assertIn("/upload-url", self.mobile_upload_javascript)
+        self.assertIn("/complete", self.mobile_upload_javascript)
+        self.assertIn(
+            "/usr/share/nginx/html/application/mobile-upload.html",
+            self.dockerfile,
+        )
 
     def test_application_shell_avoids_mixed_cached_frontend_versions(self):
         self.assertNotIn('byId("reset-application-btn")', self.javascript)

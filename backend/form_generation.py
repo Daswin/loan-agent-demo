@@ -96,6 +96,7 @@ def generate_salary_assignment_form(application: LoanApplication) -> str:
     .field strong {{ display: block; padding-top: 7px; font-weight: 600; }}
     .authorization {{ margin: 30px 0; padding: 20px; border: 1px solid #d8dee6; background: #f8fafc; }}
     .blank {{ display: inline-block; min-width: 180px; border-bottom: 1px solid #29384d; }}
+    .deduction-amount {{ display: inline-block; min-width: 150px; padding: 0 8px 2px; border-bottom: 1px solid #29384d; text-align: center; }}
     .signatures {{ display: grid; grid-template-columns: 1fr 1fr; gap: 45px; margin-top: 70px; }}
     .signature {{ padding-top: 8px; border-top: 1px solid #29384d; color: #66758a; font-size: 12px; }}
     .footer {{ margin-top: 65px; padding-top: 16px; border-top: 1px solid #d8dee6; color: #66758a; font-size: 11px; }}
@@ -118,13 +119,12 @@ def generate_salary_assignment_form(application: LoanApplication) -> str:
       <div class="field"><span>Financial institution</span><strong>{_text(bank, "To be completed")}</strong></div>
       <div class="field"><span>Payroll frequency</span><strong>Monthly</strong></div>
       <div class="field"><span>Monthly deduction amount</span><strong>{_text(_currency(monthly_payment))}</strong></div>
-      <div class="field"><span>Annual interest rate</span><strong>20%</strong></div>
       <div class="field"><span>Loan term</span><strong>{_text(f"{requested_term} months" if requested_term else "To be completed")}</strong></div>
     </div>
 
     <section class="authorization">
       <p>I, <strong>{_text(employee_name)}</strong>, authorize my employer to deduct
-      <strong>{_text(_currency(monthly_payment))}</strong> from my salary each month and remit that amount
+      <strong class="deduction-amount">{_text(_currency(monthly_payment))}</strong> from my salary each month and remit that amount
       to <strong>{_text(bank, "the named financial institution")}</strong> toward my loan obligation.</p>
       <p>This authorization will remain in effect until the obligation has been satisfied
       or written instructions to amend or end it have been accepted by the employer and

@@ -115,10 +115,11 @@
     .benefit { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; }
     .benefit-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; color: #0b3d80; background: rgba(255,255,255,.9); box-shadow: 0 7px 18px rgba(27,59,102,.1); }
     .benefit-icon svg { display: block; width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-    .benefit strong, .benefit span { display: block; }
-    .benefit strong { font-size: .92rem; }
-    .benefit span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
-    .assistant-shell { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
+    .benefit > div strong, .benefit > div span { display: block; }
+    .benefit > div strong { font-size: .92rem; }
+    .benefit > div span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
+    .assistant-workspace-wrap { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); }
+    .assistant-shell { position: relative; width: 100%; height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
     .progress-rail { position: absolute; z-index: 4; top: 50%; left: -82px; width: 70px; transform: translateY(-50%); display: grid; gap: 0; padding: 15px 8px; border: 1px solid rgba(255,255,255,.72); border-radius: 24px; background: rgba(249,248,245,.76); box-shadow: 0 18px 40px rgba(18,42,75,.14); backdrop-filter: blur(18px); }
     .progress-stage { position: relative; display: grid; justify-items: center; gap: 5px; min-height: 72px; color: #7183a0; text-align: center; font-size: .58rem; line-height: 1.15; }
     .progress-stage:not(:last-child)::after { content: ""; position: absolute; top: 28px; bottom: -4px; left: 50%; width: 2px; transform: translateX(-50%); background: #d7dee8; }
@@ -166,6 +167,7 @@
     .document-controls { align-items: center; }
     .camera-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
     .camera-option { display: none; align-items: center; gap: 6px; }
+    .phone-upload-option { display: inline-flex; }
     .camera-option svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .document input { max-width: 100%; }
     .documents-card .row { margin-top: 7px; }
@@ -215,6 +217,18 @@
     .tutorial-actions button { padding: 8px 12px; font-size: .76rem; }
     .tutorial-skip { margin-right: auto; border-color: transparent; color: #5f7190; background: transparent; }
     .tutorial-back { border-color: #b8c8dc; color: #234a7c; background: white; }
+    .document-preview-dialog { width: min(940px,calc(100% - 30px)); height: min(90vh,920px); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 24px; background: #f6f8fb; box-shadow: 0 30px 90px rgba(5,28,63,.28); }
+    .document-preview-dialog::backdrop,.qr-dialog::backdrop { background: rgba(11,31,58,.46); backdrop-filter: blur(6px); }
+    .preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: white; border-bottom: 1px solid #dce5f0; }
+    .preview-toolbar h2 { margin: 0; color: #082e65; font: 600 1.1rem 'Cinzel',serif; }
+    .preview-actions { display: flex; gap: 8px; }
+    #form-preview-frame { width: 100%; height: calc(100% - 67px); border: 0; background: #eef1f5; }
+    .qr-dialog { width: min(470px,calc(100% - 30px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 24px; color: #0a2d60; background: #fff; box-shadow: 0 30px 80px rgba(5,28,63,.25); }
+    .qr-content { padding: 26px; text-align: center; }
+    .qr-content h2 { margin: 0 0 8px; font: 600 1.35rem 'Cinzel',serif; }
+    .qr-content p { color: #607593; line-height: 1.45; }
+    #mobile-upload-qr { display: block; width: min(260px,80vw); height: auto; margin: 18px auto; border: 10px solid white; box-shadow: 0 7px 25px rgba(15,54,99,.13); }
+    .qr-status { min-height: 22px; color: #1b578f !important; font-weight: 650; }
 
     @media (max-width: 920px) {
       .site-header { position: absolute; height: 72px; padding: 0 22px; background: transparent; }
@@ -225,6 +239,7 @@
       .hero-copy .eyebrow,.benefits { display: none; }
       .hero-copy h1 { width: 72%; margin: 0 0 15px; font-size: clamp(2.2rem,10vw,3.15rem); }
       .hero-copy > p { width: 67%; margin: 0; font-size: .86rem; }
+      .assistant-workspace-wrap { width: 100%; }
       .assistant-shell { width: 100%; height: auto; min-height: 590px; overflow: visible; border: 0; border-radius: 24px 24px 0 0; background: rgba(249,246,240,.88); box-shadow: 0 -8px 30px rgba(35,42,52,.08); backdrop-filter: blur(18px); }
       .documents-card,.workflow-card { width: 100%; }
       .progress-rail { position: static; width: auto; transform: none; grid-template-columns: repeat(4,1fr); gap: 0; margin: 0 15px 4px; padding: 9px 6px 6px; border-radius: 15px; box-shadow: none; }
@@ -242,6 +257,7 @@
       .composer { position: sticky; bottom: 72px; z-index: 5; }
       .conversation-actions { padding-bottom: 4px; }
       .camera-option { display: inline-flex; }
+      .phone-upload-option { display: none; }
       .mobile-nav { position: fixed; z-index: 25; inset: auto 0 0; height: 70px; display: grid; grid-template-columns: repeat(4,1fr); padding: 7px 12px max(7px,env(safe-area-inset-bottom)); border-top: 1px solid #e2e7ee; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
       .mobile-nav .tab-button { display: grid; justify-items: center; gap: 2px; padding: 4px; border-radius: 8px; font-size: .68rem; }
       .nav-icon { font-size: 1.17rem; line-height: 1; }
@@ -286,13 +302,14 @@
       </div>
     </section>
 
-    <section id="assistant-workspace" class="assistant-shell" aria-label="Loan application workspace">
+    <div class="assistant-workspace-wrap">
       <aside class="progress-rail" aria-label="Application progress">
         <div id="stage-information" class="progress-stage current"><span class="stage-dot">1</span><span>Information</span></div>
         <div id="stage-documents" class="progress-stage"><span class="stage-dot">2</span><span>Documents</span></div>
         <div id="stage-credit" class="progress-stage"><span class="stage-dot">3</span><span>Credit check</span></div>
         <div id="stage-submission" class="progress-stage"><span class="stage-dot">4</span><span>Submission</span></div>
       </aside>
+    <section id="assistant-workspace" class="assistant-shell" aria-label="Loan application workspace">
       <div class="assistant-header">
         <div class="assistant-identity"><span class="assistant-avatar" aria-hidden="true"></span><div class="assistant-title"><strong>Loan Assistant</strong><span><i class="online-dot"></i> Online</span></div></div>
         <button class="assistant-menu tutorial-launch" type="button" aria-label="Open page tutorial">Tutorial</button>
@@ -328,6 +345,7 @@
       </section>
       <p id="notice" class="global-notice" aria-live="polite"></p>
     </section>
+    </div>
   </main>
 
   <nav class="mobile-nav" aria-label="Mobile application navigation">
@@ -377,6 +395,28 @@
       <p id="inactivity-message">For this shared demonstration, an application returns to its original state after five minutes without activity.</p>
       <p id="inactivity-countdown" class="inactivity-countdown" hidden></p>
       <div class="inactivity-actions"><button id="inactivity-action-btn" type="button">Continue</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="form-preview-dialog" class="document-preview-dialog" aria-labelledby="form-preview-title">
+    <div class="preview-toolbar">
+      <h2 id="form-preview-title">Salary Deduction / Assignment Form</h2>
+      <div class="preview-actions">
+        <button id="print-form-btn" class="secondary" type="button">Print / Save PDF</button>
+        <button id="download-form-btn" type="button">Download</button>
+        <button id="close-form-preview-btn" class="dialog-close" type="button">Close</button>
+      </div>
+    </div>
+    <iframe id="form-preview-frame" title="Salary deduction form preview"></iframe>
+  </dialog>
+
+  <dialog id="mobile-upload-dialog" class="qr-dialog" aria-labelledby="mobile-upload-title">
+    <div class="qr-content">
+      <h2 id="mobile-upload-title">Upload using your phone</h2>
+      <p>Scan this one-time QR code with your phone. It expires after five minutes.</p>
+      <img id="mobile-upload-qr" alt="QR code for secure mobile document upload">
+      <p id="mobile-upload-status" class="qr-status" aria-live="polite">Waiting for your phone…</p>
+      <button id="close-mobile-upload-btn" class="secondary" type="button">Close</button>
     </div>
   </dialog>
 

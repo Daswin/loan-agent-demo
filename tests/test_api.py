@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from backend import application
+from backend import mobile_upload
 from backend.application_data import _demo_value
 from backend.main import app
 from backend.models import DocumentType
@@ -14,10 +15,49 @@ from backend.models import DocumentType
 class ApiTests(unittest.TestCase):
     def setUp(self):
         application._APPLICATIONS.clear()
+        mobile_upload.clear_memory_sessions()
         self.client = TestClient(app)
 
     def tearDown(self):
         application._APPLICATIONS.clear()
+        mobile_upload.clear_memory_sessions()
+
+    def test_mobile_photo_handoff_uses_a_one_time_session(self):
+        created = self._create_application("marcus")
+        application_id = created["application_id"]
+        self.client.post(f"/api/applications/{application_id}/documents/start")
+
+        with patch("backend.main._qr_data_url", return_value="data:image/png;base64,QR"):
+            response = self.client.post(
+                f"/api/applications/{application_id}/documents/"
+                "job_letter/mobile-upload-session",
+                json={"frontend_origin": "http://localhost:8080"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        handoff = response.json()
+        self.assertIn("token", handoff)
+        self.assertNotIn(application_id, handoff["mobile_url"])
+        self.assertEqual(handoff["qr_data_url"], "data:image/png;base64,QR")
+
+        status_response = self.client.get(
+            f"/api/mobile-upload-sessions/{handoff['token']}"
+        )
+        self.assertEqual(status_response.status_code, 200)
+        self.assertFalse(status_response.json()["completed"])
+        self.assertEqual(status_response.json()["document_type"], "job_letter")
+
+    def test_mobile_photo_handoff_rejects_system_generated_document(self):
+        created = self._create_application("marcus")
+        application_id = created["application_id"]
+
+        response = self.client.post(
+            f"/api/applications/{application_id}/documents/"
+            "credit_bureau_report/mobile-upload-session",
+            json={"frontend_origin": "http://localhost:8080"},
+        )
+
+        self.assertEqual(response.status_code, 400)
 
     def _create_application(self, profile_id=None):
         response = self.client.post(
