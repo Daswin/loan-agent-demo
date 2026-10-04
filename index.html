@@ -36,6 +36,7 @@
     button.success { background: #167347; }
     button.warning { background: #9a5c00; }
     button:disabled { opacity: .48; cursor: not-allowed; }
+    .button-link { display: inline-flex; align-items: center; padding: 8px 11px; border: 1px solid #d4af37; border-radius: 7px; color: white; background: #1a3a6b; text-decoration: none; font-size: .78rem; font-weight: 650; }
     .document { border-top: 1px solid #e3e8ef; padding: 14px 0; }
     .document:first-child { border-top: 0; }
     .document-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
@@ -120,16 +121,16 @@
     .benefit > div span { margin-top: 2px; color: #6680a5; font-size: .78rem; }
     .assistant-workspace-wrap { position: relative; z-index: 3; justify-self: end; width: min(100%,640px); }
     .assistant-shell { position: relative; width: 100%; height: min(785px,calc(100vh - 130px)); min-height: 600px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.68); border-radius: 26px; background: rgba(250,248,245,.74); box-shadow: 0 28px 70px rgba(41,37,29,.2); backdrop-filter: blur(25px); }
-    .progress-rail { position: absolute; z-index: 4; top: 50%; left: -82px; width: 70px; transform: translateY(-50%); display: grid; gap: 0; padding: 15px 8px; border: 1px solid rgba(255,255,255,.72); border-radius: 24px; background: rgba(249,248,245,.76); box-shadow: 0 18px 40px rgba(18,42,75,.14); backdrop-filter: blur(18px); }
-    .progress-stage { position: relative; display: grid; justify-items: center; gap: 5px; min-height: 72px; color: #7183a0; text-align: center; font-size: .58rem; line-height: 1.15; }
-    .progress-stage:not(:last-child)::after { content: ""; position: absolute; top: 28px; bottom: -4px; left: 50%; width: 2px; transform: translateX(-50%); background: #d7dee8; }
-    .stage-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 27px; height: 27px; border: 2px solid #c8d2e1; border-radius: 50%; background: #f8f9fb; color: #6c7f9c; font-size: .69rem; font-weight: 800; }
+    .progress-rail { flex: 1; display: grid; grid-template-columns: repeat(4,minmax(44px,1fr)); gap: 0; max-width: 310px; margin: 0 4px; padding: 8px 10px 5px; border: 1px solid rgba(24,67,119,.1); border-radius: 16px; background: rgba(255,255,255,.52); }
+    .progress-stage { position: relative; display: grid; justify-items: center; gap: 3px; min-height: 39px; color: #7183a0; text-align: center; font-size: .5rem; line-height: 1.05; }
+    .progress-stage:not(:last-child)::after { content: ""; position: absolute; z-index: 0; top: 10px; right: -50%; left: 50%; height: 2px; background: #d7dee8; }
+    .stage-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid #c8d2e1; border-radius: 50%; background: #f8f9fb; color: #6c7f9c; font-size: .6rem; font-weight: 800; }
     .progress-stage.complete { color: #174e91; }
     .progress-stage.complete .stage-dot { border-color: #2874d4; color: white; background: #2874d4; }
     .progress-stage.complete:not(:last-child)::after { background: #2874d4; }
     .progress-stage.current { color: #082e65; font-weight: 700; }
     .progress-stage.current .stage-dot { border-color: #c99716; color: #6e4e00; background: #fff4ce; box-shadow: 0 0 0 5px rgba(212,175,55,.14); }
-    .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px 12px; }
+    .assistant-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; }
     .assistant-identity { display: flex; align-items: center; gap: 12px; }
     .assistant-avatar, .message.agent::before { background-image: url('/application/assets/loan-assistant-hero.png'); background-size: 320% auto; background-position: 38% 22%; background-repeat: no-repeat; }
     .assistant-avatar { width: 48px; height: 48px; flex: 0 0 auto; border: 2px solid white; border-radius: 50%; box-shadow: 0 4px 13px rgba(15,43,78,.18); }
@@ -174,6 +175,8 @@
     .documents-card button,.workflow-card button { padding: 8px 10px; font-size: .75rem; }
     .document-head { margin-bottom: 5px; font-size: .82rem; }
     .document-feedback { margin-top: 5px; font-size: .72rem; }
+    .document-preview-button { padding: 0 !important; border: 0; color: #0c55b8; background: transparent; text-align: left; text-decoration: underline; text-underline-offset: 2px; font-size: .72rem !important; }
+    .document-preview-button:hover:not(:disabled) { color: #073b83; background: transparent; transform: none; }
     .workflow-grid { display: grid; grid-template-columns: 1fr; gap: 7px; }
     .workflow-grid .panel { margin: 0; padding: 10px 12px; border: 1px solid rgba(19,57,102,.09); border-radius: 12px; background: rgba(255,255,255,.8); }
     .workflow-grid h3 { margin: 0 0 3px; font-size: .92rem; }
@@ -222,7 +225,7 @@
     .preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: white; border-bottom: 1px solid #dce5f0; }
     .preview-toolbar h2 { margin: 0; color: #082e65; font: 600 1.1rem 'Cinzel',serif; }
     .preview-actions { display: flex; gap: 8px; }
-    #form-preview-frame { width: 100%; height: calc(100% - 67px); border: 0; background: #eef1f5; }
+    #form-preview-frame,#document-preview-frame { width: 100%; height: calc(100% - 67px); border: 0; background: #eef1f5; }
     .qr-dialog { width: min(470px,calc(100% - 30px)); overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 24px; color: #0a2d60; background: #fff; box-shadow: 0 30px 80px rgba(5,28,63,.25); }
     .qr-content { padding: 26px; text-align: center; }
     .qr-content h2 { margin: 0 0 8px; font: 600 1.35rem 'Cinzel',serif; }
@@ -242,9 +245,10 @@
       .assistant-workspace-wrap { width: 100%; }
       .assistant-shell { width: 100%; height: auto; min-height: 590px; overflow: visible; border: 0; border-radius: 24px 24px 0 0; background: rgba(249,246,240,.88); box-shadow: 0 -8px 30px rgba(35,42,52,.08); backdrop-filter: blur(18px); }
       .documents-card,.workflow-card { width: 100%; }
-      .progress-rail { position: static; width: auto; transform: none; grid-template-columns: repeat(4,1fr); gap: 0; margin: 0 15px 4px; padding: 9px 6px 6px; border-radius: 15px; box-shadow: none; }
+      .assistant-header { flex-wrap: wrap; }
+      .progress-rail { order: 3; flex-basis: 100%; max-width: none; margin: 3px 0 0; padding: 7px 6px 5px; border-radius: 14px; box-shadow: none; }
       .progress-stage { min-height: 48px; font-size: .55rem; }
-      .progress-stage:not(:last-child)::after { top: 12px; right: -50%; bottom: auto; left: 50%; width: 100%; height: 2px; transform: none; }
+      .progress-stage:not(:last-child)::after { top: 12px; right: -50%; bottom: auto; left: 50%; width: auto; height: 2px; transform: none; }
       .stage-dot { width: 24px; height: 24px; }
       .assistant-header { padding: 17px 18px 8px; }
       .workspace-tabs { display: none; }
@@ -303,15 +307,15 @@
     </section>
 
     <div class="assistant-workspace-wrap">
-      <aside class="progress-rail" aria-label="Application progress">
-        <div id="stage-information" class="progress-stage current"><span class="stage-dot">1</span><span>Information</span></div>
-        <div id="stage-documents" class="progress-stage"><span class="stage-dot">2</span><span>Documents</span></div>
-        <div id="stage-credit" class="progress-stage"><span class="stage-dot">3</span><span>Credit check</span></div>
-        <div id="stage-submission" class="progress-stage"><span class="stage-dot">4</span><span>Submission</span></div>
-      </aside>
     <section id="assistant-workspace" class="assistant-shell" aria-label="Loan application workspace">
       <div class="assistant-header">
         <div class="assistant-identity"><span class="assistant-avatar" aria-hidden="true"></span><div class="assistant-title"><strong>Loan Assistant</strong><span><i class="online-dot"></i> Online</span></div></div>
+        <aside class="progress-rail" aria-label="Application progress">
+          <div id="stage-information" class="progress-stage current"><span class="stage-dot">1</span><span>Information</span></div>
+          <div id="stage-documents" class="progress-stage"><span class="stage-dot">2</span><span>Documents</span></div>
+          <div id="stage-credit" class="progress-stage"><span class="stage-dot">3</span><span>Credit check</span></div>
+          <div id="stage-submission" class="progress-stage"><span class="stage-dot">4</span><span>Submission</span></div>
+        </aside>
         <button class="assistant-menu tutorial-launch" type="button" aria-label="Open page tutorial">Tutorial</button>
       </div>
       <nav class="workspace-tabs" aria-label="Application sections">
@@ -408,6 +412,17 @@
       </div>
     </div>
     <iframe id="form-preview-frame" title="Salary deduction form preview"></iframe>
+  </dialog>
+
+  <dialog id="document-preview-dialog" class="document-preview-dialog" aria-labelledby="document-preview-title">
+    <div class="preview-toolbar">
+      <h2 id="document-preview-title">Document preview</h2>
+      <div class="preview-actions">
+        <a id="open-document-btn" class="button-link" href="#" target="_blank" rel="noopener">Open PDF</a>
+        <button id="close-document-preview-btn" class="dialog-close" type="button">Close</button>
+      </div>
+    </div>
+    <iframe id="document-preview-frame" title="Uploaded PDF preview"></iframe>
   </dialog>
 
   <dialog id="mobile-upload-dialog" class="qr-dialog" aria-labelledby="mobile-upload-title">

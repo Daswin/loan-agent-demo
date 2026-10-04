@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from backend import application
 from backend import mobile_upload
+from backend.documents import register_document_received
 from backend.application_data import _demo_value
 from backend.main import app
 from backend.models import DocumentType
@@ -229,6 +230,36 @@ class ApiTests(unittest.TestCase):
             response.json()["storage_path"],
             f"loan-applications/Alicia_Brown/{application_id}/job_letter.pdf",
         )
+
+    def test_document_preview_returns_short_lived_inline_signed_url(self):
+        created = self._create_application("keith")
+        application_id = created["application_id"]
+        application.begin_document_collection(application_id)
+        register_document_received(
+            application_id,
+            DocumentType.JOB_LETTER,
+            "job_letter.pdf",
+            "application/pdf",
+        )
+        blob = MagicMock()
+        blob.exists.return_value = True
+        blob.generate_signed_url.return_value = "https://storage.example/preview"
+        storage_client = MagicMock()
+        storage_client.bucket.return_value.blob.return_value = blob
+
+        with patch.dict(os.environ, {"UPLOAD_BUCKET": "loan-documents"}):
+            with patch("backend.main.storage.Client", return_value=storage_client):
+                response = self.client.get(
+                    f"/api/applications/{application_id}/documents/"
+                    "job_letter/preview-url"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["url"], "https://storage.example/preview")
+        signed_options = blob.generate_signed_url.call_args.kwargs
+        self.assertEqual(signed_options["method"], "GET")
+        self.assertEqual(signed_options["response_disposition"], "inline")
+        self.assertEqual(signed_options["response_type"], "application/pdf")
 
     def test_manual_reset_endpoint_restores_seeded_customer(self):
         created = self.client.post(

@@ -183,6 +183,10 @@ current intent.
    documents, requirements, the process, or what happens next, temporarily
    pause data collection and follow QUESTION MODE.
 
+   Treat a message containing who, what, when, where, why, or how as a
+   question when it is being used to request information, even when the
+   applicant omits a question mark.
+
 3. If the applicant's message contains both application information and a
    question or concern, follow MIXED-INTENT MODE.
 

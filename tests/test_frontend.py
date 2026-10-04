@@ -211,12 +211,15 @@ class FrontendContractTests(unittest.TestCase):
             self.assertIn(f'id="stage-{stage}"', self.html)
         self.assertIn("renderProgressRail", self.javascript)
 
-    def test_progress_rail_is_positioned_outside_the_clipped_chat_shell(self):
+    def test_progress_rail_is_in_the_assistant_header(self):
         self.assertIn('class="assistant-workspace-wrap"', self.html)
+        identity_position = self.html.index('class="assistant-identity"')
         rail_position = self.html.index('class="progress-rail"')
-        shell_position = self.html.index('class="assistant-shell"')
-        self.assertLess(rail_position, shell_position)
-        self.assertIn(".assistant-workspace-wrap { position: relative", self.html)
+        tutorial_position = self.html.index('class="assistant-menu tutorial-launch"')
+        self.assertLess(identity_position, rail_position)
+        self.assertLess(rail_position, tutorial_position)
+        self.assertIn("between Loan Assistant and Tutorial", self.javascript)
+        self.assertIn("grid-template-columns: repeat(4", self.html)
 
     def test_benefit_icons_are_centered_without_span_rule_override(self):
         self.assertIn(".benefit-icon { display: flex; align-items: center; justify-content: center", self.html)
@@ -243,6 +246,13 @@ class FrontendContractTests(unittest.TestCase):
             "/usr/share/nginx/html/application/mobile-upload.html",
             self.dockerfile,
         )
+
+    def test_stored_documents_can_be_previewed_as_pdfs(self):
+        self.assertIn('id="document-preview-dialog"', self.html)
+        self.assertIn('id="document-preview-frame"', self.html)
+        self.assertIn("openDocumentPreview", self.javascript)
+        self.assertIn("/preview-url", self.javascript)
+        self.assertIn('preview.textContent = "View PDF"', self.javascript)
 
     def test_application_shell_avoids_mixed_cached_frontend_versions(self):
         self.assertNotIn('byId("reset-application-btn")', self.javascript)

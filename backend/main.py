@@ -36,11 +36,13 @@ from .credit_bureau import record_credit_consent, run_simulated_credit_check
 from .documents import (
     build_storage_path,
     get_customer_folder_name,
+    get_document_record,
     mark_document_failed,
     mark_document_processed,
     mark_document_processing,
     register_document_received,
 )
+from .document_files import normalize_uploaded_document
 from .document_processing import process_document_with_document_ai
 from .demo_documents import generate_and_upload_demo_documents
 from .models import CreditResult, DocumentType
@@ -194,6 +196,13 @@ QUESTION_OPENERS = (
     "please clarify",
 )
 
+ALLOWED_DOCUMENT_CONTENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+}
+
 RESUME_MESSAGES = {
     "continue",
     "continue the application",
@@ -230,9 +239,12 @@ def _conversation_intent(message: str) -> str:
     if not normalized:
         return "conversation"
     words = set(re.findall(r"[a-z']+", normalized))
+    # Applicants often omit punctuation in chat. Treat the 5 Ws and "how"
+    # as questions wherever they appear, not only when a question mark exists.
+    contains_question_word = bool(words.intersection(QUESTION_WORDS))
     if (
         "?" in normalized
-        or words.intersection(QUESTION_WORDS)
+        or contains_question_word
         or normalized.startswith(QUESTION_OPENERS)
         or any(marker in normalized for marker in PROBLEM_MARKERS)
         or normalized in ACKNOWLEDGEMENT_MESSAGES
@@ -280,6 +292,23 @@ def _generate_upload_url(blob, content_type: str) -> str:
         "expiration": datetime.timedelta(minutes=15),
         "method": "PUT",
         "content_type": content_type,
+    }
+    signer_email = os.environ.get("BACKEND_SERVICE_ACCOUNT_EMAIL")
+    if signer_email:
+        credentials, _ = google.auth.default()
+        credentials.refresh(Request())
+        options["service_account_email"] = signer_email
+        options["access_token"] = credentials.token
+    return blob.generate_signed_url(**options)
+
+
+def _generate_preview_url(blob) -> str:
+    options = {
+        "version": "v4",
+        "expiration": datetime.timedelta(minutes=10),
+        "method": "GET",
+        "response_disposition": "inline",
+        "response_type": "application/pdf",
     }
     signer_email = os.environ.get("BACKEND_SERVICE_ACCOUNT_EMAIL")
     if signer_email:
@@ -773,29 +802,46 @@ async def complete_mobile_upload_endpoint(token: str):
         session["filename"],
     )
     bucket_name = os.environ.get("UPLOAD_BUCKET")
+    bucket = None
     if bucket_name:
-        blob = storage.Client().bucket(bucket_name).blob(expected_path)
+        bucket = storage.Client().bucket(bucket_name)
+        blob = bucket.blob(expected_path)
         if not blob.exists():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="The uploaded photo could not be verified.",
             )
     try:
+        filename = session["filename"]
+        content_type = session["content_type"]
+        if bucket is not None:
+            filename, content_type, _ = normalize_uploaded_document(
+                bucket,
+                application_id,
+                typed_document,
+                filename,
+                content_type,
+            )
         register_document_received(
             application_id,
             typed_document,
-            session["filename"],
-            session["content_type"],
+            filename,
+            content_type,
         )
         process_document_with_document_ai(application_id, typed_document)
-        update_mobile_upload_session(token, completed=True)
+        update_mobile_upload_session(
+            token,
+            completed=True,
+            filename=filename,
+            content_type=content_type,
+        )
     except (ValueError, RuntimeError) as exc:
         update_mobile_upload_session(token, error=str(exc))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
-    return {"completed": True, "filename": session["filename"]}
+    return {"completed": True, "filename": filename}
 
 
 @app.post(
@@ -808,6 +854,11 @@ async def create_upload_url_endpoint(
 ):
     _application_or_404(application_id)
     typed_document = _document_type_or_422(document_type)
+    if payload.content_type.lower() not in ALLOWED_DOCUMENT_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only PDF, PNG, and JPEG documents can be uploaded.",
+        )
     bucket_name = os.environ.get("UPLOAD_BUCKET")
 
     if not bucket_name:
@@ -871,19 +922,71 @@ async def document_received_endpoint(
         )
         bucket_name = os.environ.get("UPLOAD_BUCKET")
         if bucket_name:
-            blob = storage.Client().bucket(bucket_name).blob(expected_path)
+            bucket = storage.Client().bucket(bucket_name)
+            blob = bucket.blob(expected_path)
             if not blob.exists():
                 raise ValueError(
                     "The uploaded Cloud Storage object could not be verified."
                 )
+            filename, content_type, _ = normalize_uploaded_document(
+                bucket,
+                application_id,
+                typed_document,
+                payload.filename,
+                payload.content_type,
+            )
+        else:
+            filename = payload.filename
+            content_type = payload.content_type
         return register_document_received(
             application_id,
             typed_document,
-            payload.filename,
-            payload.content_type,
+            filename,
+            content_type,
         )
     except ValueError as exc:
         raise _bad_request(exc) from exc
+
+
+@app.get(
+    "/api/applications/{application_id}/documents/{document_type}/preview-url"
+)
+async def document_preview_url_endpoint(
+    application_id: str,
+    document_type: str,
+):
+    _application_or_404(application_id)
+    typed_document = _document_type_or_422(document_type)
+    try:
+        record = get_document_record(application_id, typed_document)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    if not record.storage_path or not record.filename:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No uploaded document is available to preview.",
+        )
+    bucket_name = os.environ.get("UPLOAD_BUCKET")
+    if not bucket_name:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="UPLOAD_BUCKET is not configured.",
+        )
+    blob = storage.Client().bucket(bucket_name).blob(record.storage_path)
+    if not blob.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The stored document could not be found.",
+        )
+    return {
+        "url": _generate_preview_url(blob),
+        "filename": record.filename,
+        "content_type": "application/pdf",
+        "expires_in_seconds": 600,
+    }
 
 
 @app.post(

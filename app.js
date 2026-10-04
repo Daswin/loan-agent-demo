@@ -175,7 +175,7 @@ function activateWorkspaceTab(targetId) {
 
 const TUTORIAL_STEPS = [
   { selector: '.header-link[href="/"], .mobile-back', title: "Customer selection", description: "Use this option to return to the customer list without using the browser back button." },
-  { selector: ".progress-rail", title: "Application progress", description: "This guide tracks information, documents, the simulated credit check, and submission without crowding the conversation." },
+  { selector: ".progress-rail", title: "Application progress", description: "This guide now sits at the top of the assistant, between Loan Assistant and Tutorial. It tracks information, documents, the simulated credit check, and submission." },
   { selector: '[data-tab-target="chat-panel"]', tab: "chat-panel", title: "Chat", description: "The assistant collects one missing detail at a time and can answer questions while you complete the application." },
   { selector: "#chat-window", tab: "chat-panel", title: "Conversation", description: "Application questions and your answers appear here. Suggested responses are shown only for categorical questions." },
   { selector: ".composer", tab: "chat-panel", title: "Your response", description: "Type an answer or question here, then use the blue send button." },
@@ -425,6 +425,14 @@ function renderApplicationReview() {
     const status = document.createElement("strong");
     status.textContent = record.status;
     row.append(label, status);
+    if (record.storage_path) {
+      const preview = document.createElement("button");
+      preview.type = "button";
+      preview.className = "document-preview-button";
+      preview.textContent = "View PDF";
+      preview.addEventListener("click", () => openDocumentPreview(record));
+      row.appendChild(preview);
+    }
     documents.appendChild(row);
   });
 }
@@ -646,6 +654,15 @@ function renderDocuments() {
     ));
     controls.append(input, upload);
 
+    if (record.storage_path) {
+      const preview = document.createElement("button");
+      preview.type = "button";
+      preview.className = "document-preview-button";
+      preview.textContent = `View ${record.filename || "uploaded PDF"}`;
+      preview.addEventListener("click", () => openDocumentPreview(record));
+      controls.append(preview);
+    }
+
     const cameraInput = document.createElement("input");
     cameraInput.type = "file";
     cameraInput.accept = "image/*";
@@ -693,6 +710,23 @@ function renderDocuments() {
     item.append(head, controls, feedback);
     container.appendChild(item);
   });
+}
+
+async function openDocumentPreview(record) {
+  setNotice(`Opening ${DOCUMENT_LABELS[record.document_type]}…`);
+  try {
+    const preview = await api(
+      `/api/applications/${applicationId}/documents/${record.document_type}/preview-url`,
+    );
+    byId("document-preview-title").textContent =
+      DOCUMENT_LABELS[record.document_type] || "Document preview";
+    byId("document-preview-frame").src = preview.url;
+    byId("open-document-btn").href = preview.url;
+    byId("document-preview-dialog").showModal();
+    setNotice("Secure PDF preview opened.", "success");
+  } catch (error) {
+    setNotice(error.message, "error");
+  }
 }
 
 async function downloadSalaryAssignmentForm() {
@@ -835,7 +869,11 @@ async function uploadDocument(documentType, input, uploadButton, feedback) {
     return;
   }
 
-  const contentType = file.type || "application/octet-stream";
+  const contentType = file.type || (
+    file.name.toLowerCase().endsWith(".pdf")
+      ? "application/pdf"
+      : "image/jpeg"
+  );
   const idleButtonLabel = uploadButton.textContent;
   setNotice(`Uploading ${DOCUMENT_LABELS[documentType]}…`);
   uploadButton.disabled = true;
@@ -1116,6 +1154,13 @@ byId("print-form-btn").addEventListener("click", () => {
   byId("form-preview-frame").contentWindow?.print();
 });
 byId("download-form-btn").addEventListener("click", downloadGeneratedForm);
+byId("close-document-preview-btn").addEventListener("click", () => {
+  byId("document-preview-dialog").close();
+});
+byId("document-preview-dialog").addEventListener("close", () => {
+  byId("document-preview-frame").src = "about:blank";
+  byId("open-document-btn").href = "#";
+});
 byId("close-mobile-upload-btn").addEventListener("click", () => {
   stopMobileUploadPolling();
   activeMobileUploadToken = null;

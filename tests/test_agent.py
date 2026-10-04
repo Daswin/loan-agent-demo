@@ -61,6 +61,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("do not approve, decline", instruction)
         self.assertIn("not a lending decision", normalized_instruction)
         self.assertIn("backend application state is authoritative", instruction)
+        self.assertIn("who, what, when, where, why, or how", instruction)
 
     def test_agent_has_no_credit_result_selection_tool(self):
         tool_names = {tool.name for tool in root_agent.tools}
@@ -150,6 +151,18 @@ class AgentTests(unittest.TestCase):
 
         self.assertEqual(_conversation_intent("keith@example.com"), "field_answer")
         self.assertEqual(_conversation_intent("Let's continue"), "resume")
+
+    def test_five_ws_and_how_are_questions_without_question_marks(self):
+        for message in (
+            "who reviews my application",
+            "what happens after submission",
+            "when will the bank receive it",
+            "where are my documents stored",
+            "why is consent required",
+            "how does the credit check work",
+        ):
+            with self.subTest(message=message):
+                self.assertEqual(_conversation_intent(message), "conversation")
 
     def test_question_is_not_saved_as_pending_field(self):
         loan_application = application.create_application("keith")
