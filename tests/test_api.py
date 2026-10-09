@@ -60,6 +60,35 @@ class ApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_mobile_handoff_accepts_pdf_file_upload(self):
+        created = self._create_application("dana")
+        application_id = created["application_id"]
+        self.client.post(f"/api/applications/{application_id}/documents/start")
+        with patch("backend.main._qr_data_url", return_value="data:image/png;base64,QR"):
+            session_response = self.client.post(
+                f"/api/applications/{application_id}/documents/"
+                "payslip_01/mobile-upload-session",
+                json={"frontend_origin": "http://localhost:8080"},
+            )
+        token = session_response.json()["token"]
+        blob = MagicMock()
+        blob.generate_signed_url.return_value = "https://upload.example/signed"
+        storage_client = MagicMock()
+        storage_client.bucket.return_value.blob.return_value = blob
+
+        with patch.dict(os.environ, {"UPLOAD_BUCKET": "loan-documents"}):
+            with patch("backend.main.storage.Client", return_value=storage_client):
+                response = self.client.post(
+                    f"/api/mobile-upload-sessions/{token}/upload-url",
+                    json={
+                        "filename": "payslip.pdf",
+                        "content_type": "application/pdf",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["url"], "https://upload.example/signed")
+
     def _create_application(self, profile_id=None):
         response = self.client.post(
             "/api/applications",

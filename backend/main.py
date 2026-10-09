@@ -753,10 +753,10 @@ async def mobile_upload_url_endpoint(token: str, payload: UploadUrlRequest):
             status_code=status.HTTP_409_CONFLICT,
             detail="This one-time mobile upload session has already been used.",
         )
-    if not payload.content_type.startswith("image/"):
+    if payload.content_type.lower() not in ALLOWED_DOCUMENT_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The mobile upload must be an image.",
+            detail="The mobile upload must be a PDF, PNG, or JPEG document.",
         )
     typed_document = _document_type_or_422(session["document_type"])
     object_path = build_storage_path(

@@ -253,6 +253,13 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("/mobile-upload-session", self.javascript)
         self.assertIn("window.setInterval(pollMobileUpload, 5000)", self.javascript)
         self.assertIn('capture="environment"', self.mobile_upload_html)
+        self.assertIn('id="file-input"', self.mobile_upload_html)
+        self.assertIn("Choose a file or image", self.mobile_upload_html)
+        self.assertIn('id="close-btn"', self.mobile_upload_html)
+        self.assertIn("Done / Close", self.mobile_upload_html)
+        self.assertIn("window.close()", self.mobile_upload_javascript)
+        self.assertIn("You can now close this browser tab or window", self.mobile_upload_javascript)
+        self.assertIn('"application/pdf", "image/png", "image/jpeg"', self.mobile_upload_javascript)
         self.assertIn("/upload-url", self.mobile_upload_javascript)
         self.assertIn("/complete", self.mobile_upload_javascript)
         self.assertIn(

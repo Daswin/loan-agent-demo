@@ -13,11 +13,14 @@
     .mark { width: 34px; height: 22px; border-radius: 12px 3px; transform: skew(-18deg); background: linear-gradient(135deg,#39a7ef,#0a3d91); }
     h1 { margin: 28px 0 8px; font-family: Georgia,serif; font-size: 1.75rem; }
     p { color: #607593; line-height: 1.5; }
-    .capture { display: block; margin: 24px 0 12px; padding: 18px; border: 2px dashed #8eb3e3; border-radius: 17px; color: #0c55b8; background: #f5f9ff; text-align: center; font-weight: 700; cursor: pointer; }
+    .source-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 24px 0 12px; }
+    .source-option { display: grid; place-items: center; min-height: 82px; padding: 13px; border: 2px dashed #8eb3e3; border-radius: 17px; color: #0c55b8; background: #f5f9ff; text-align: center; font-weight: 700; cursor: pointer; }
     input { position: absolute; width: 1px; height: 1px; opacity: 0; }
     button { width: 100%; padding: 13px; border: 0; border-radius: 12px; color: white; background: #155fc2; font-size: 1rem; font-weight: 700; }
     button:disabled { opacity: .45; }
+    .secondary { margin-top: 10px; border: 1px solid #a9beda; color: #17477f; background: white; }
     #preview { width: 100%; max-height: 330px; margin: 12px 0; border-radius: 14px; object-fit: contain; background: #eef2f7; }
+    #selected-file { margin: 12px 0; padding: 12px; border-radius: 12px; color: #17477f; background: #eef5ff; font-size: .9rem; overflow-wrap: anywhere; }
     #status { min-height: 24px; margin-top: 14px; font-size: .9rem; }
     .success { color: #147344; }
     .error { color: #a42d35; }
@@ -26,12 +29,18 @@
 <body>
   <main>
     <div class="brand"><span class="mark" aria-hidden="true"></span>FirstBank</div>
-    <h1>Photograph document</h1>
+    <h1>Add your document</h1>
     <p id="instructions">Loading the secure upload session…</p>
-    <label class="capture" for="camera-input">Open camera</label>
+    <div class="source-options">
+      <label class="source-option" for="camera-input">Take a photo</label>
+      <label class="source-option" for="file-input">Choose a file or image</label>
+    </div>
     <input id="camera-input" type="file" accept="image/*" capture="environment" disabled>
+    <input id="file-input" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" disabled>
     <img id="preview" alt="Document photo preview" hidden>
-    <button id="upload-btn" type="button" disabled>Upload photo</button>
+    <p id="selected-file" hidden></p>
+    <button id="upload-btn" type="button" disabled>Upload document</button>
+    <button id="close-btn" class="secondary" type="button">Done / Close</button>
     <p id="status" aria-live="polite"></p>
   </main>
   <script src="/application/config.js"></script>
